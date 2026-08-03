@@ -30,6 +30,7 @@ from cosmo_ai import (
     RealtimeReady,
     RealtimeSessionEnded,
     RealtimeTranscriptDelta,
+    RealtimeTranscriptRole,
 )
 from cosmo_ai.hooks import Say, SilenceTimeout
 
@@ -81,7 +82,7 @@ async def main() -> None:
                         f"after {event.silence_ms} ms — action={event.action}"
                     )
                 elif isinstance(event, RealtimeTranscriptDelta):
-                    if event.role.value == "assistant":
+                    if event.role is RealtimeTranscriptRole.ASSISTANT:
                         marker = "»" if event.is_final else "…"
                         print(f"[agent said] {event.text}{marker}")
                 elif isinstance(event, RealtimeError):

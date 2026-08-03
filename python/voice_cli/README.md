@@ -1,16 +1,16 @@
 # cosmo-voice-cli
 
-Minimal Python voice CLI that exercises `cosmo-ai-sdk[audio]` as a
+Minimal Python voice CLI that exercises `cosmo-ai-sdk` as a
 real two-way voice call. It enables the default OS mic and speaker with one
 call each — `session.set_microphone_enabled(True)` /
 `session.set_speaker_enabled(True)` — and the agent streams back a transcript
-and speaks its replies out loud. (The SDK's `[audio]` extra supplies the OS
+and speaks its replies out loud. (The SDK's bundled
+[`sounddevice`](https://python-sounddevice.readthedocs.io/) supplies the OS
 audio I/O, since livekit-rtc Python has none natively.)
 
 ## Quick start
 
-The `[audio]` extra pulls in [`sounddevice`](https://python-sounddevice.readthedocs.io/),
-which needs the PortAudio native library (bundled in its wheels on
+`sounddevice` needs the PortAudio native library (bundled in its wheels on
 macOS/Windows; on Linux install `libportaudio2`, e.g. `apt install libportaudio2`).
 
 ```bash

@@ -25,14 +25,14 @@ Open http://localhost:5173, enter your API key, then click
 
 The `cosmo-ai` dependency is `file:../..` — this example lives inside
 the SDK package at `examples/realtime-page/`, so two levels up is the SDK
-root (`sdks/cosmo-realtime/typescript`). Build the SDK first (`npm run build`
-in the SDK root) so `dist/` exists; CI does the same.
+root. Build the SDK first (`npm run build` in the SDK root) so `dist/`
+exists; CI does the same.
 
 ## Environment
 
 | Field | Description |
 |---|---|
-| API Key | `sk-…` bearer token from the Cosmo dashboard (the server resolves the workspace and project from it) |
+| API Key | `cosmo_…` bearer token from the Cosmo dashboard (the server resolves the workspace and project from it) |
 | Base URL | Override the default Cosmo API origin (optional) |
 
 ## Screenshot (synthetic)

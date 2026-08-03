@@ -2,8 +2,7 @@
 
 Enables the default OS microphone and speaker (``set_microphone_enabled`` /
 ``set_speaker_enabled``), prints live transcripts to stdout, and exits cleanly
-on Ctrl-C or when the user types a blank line. OS audio I/O needs the
-``[audio]`` extra, which already includes ``[livekit]``.
+on Ctrl-C or when the user types a blank line.
 
 Usage:
     pip install -e .

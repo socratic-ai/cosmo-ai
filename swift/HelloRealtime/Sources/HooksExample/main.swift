@@ -157,11 +157,11 @@ if await readyFlag.get() {
 }
 
 print("\n> user: \(prompt1)\n")
-try await session.session.send(text: prompt1, audioResponse: false)
+try await session.session.send(text: prompt1)
 
 try await Task.sleep(nanoseconds: 14_000_000_000)
 print("\n> user: \(prompt2)\n")
-try await session.session.send(text: prompt2, audioResponse: false)
+try await session.session.send(text: prompt2)
 
 try await Task.sleep(nanoseconds: 14_000_000_000)
 print("\nending…")

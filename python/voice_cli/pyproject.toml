@@ -5,10 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cosmo-voice-cli-example"
 version = "0.1.0"
-description = "Minimal voice CLI demo using cosmo-ai-sdk[audio]"
+description = "Minimal voice CLI demo using cosmo-ai-sdk"
 requires-python = ">=3.10"
 dependencies = [
-    "cosmo-ai-sdk[audio] @ file:../..",
+    "cosmo-ai-sdk @ file:../..",
 ]
 
 [project.scripts]

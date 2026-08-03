@@ -10,7 +10,7 @@ against the workspace's weekly per-user minute limit.
 No local microphone is involved — the "human" on this call is the phone.
 
 Usage:
-    pip install "cosmo-ai-sdk[livekit]"
+    pip install cosmo-ai-sdk
     COSMO_API_KEY=cosmo_... COSMO_DIAL_TO=+14155550199 python examples/outbound_call.py
 
 The SDK targets https://app.askcosmo.ai by default; set COSMO_BASE_URL to point

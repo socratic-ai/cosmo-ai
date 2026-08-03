@@ -1,10 +1,11 @@
 """Text-only demo of the event-stream SDK surface.
 
-No microphone or speaker required — this example uses the text channel only
-(send_text with audio_response=False suppresses TTS on the server side).
+No microphone or speaker required — this example uses the text channel only.
+The agent still speaks into the room; nothing here plays it. Configure the
+agent with audio=AudioConfig(output=False) for a genuinely silent session.
 
 Usage:
-    pip install cosmo-ai-sdk[livekit]
+    pip install cosmo-ai-sdk
     COSMO_API_KEY=cosmo_... python examples/hello_realtime.py
 
 The SDK targets https://app.askcosmo.ai by default; set COSMO_BASE_URL to point
@@ -60,8 +61,7 @@ async def main() -> None:
                 await asyncio.sleep(2)
                 print("Sending text message…")
                 await session.send_text(
-                    "Hello from the Python SDK! What time is it?",
-                    audio_response=False,
+                    "Hello from the Python SDK! What time is it?"
                 )
                 await asyncio.sleep(10)
                 # Finish the stream; leaving the `async with` would end the

@@ -1,6 +1,6 @@
 """Run a realtime agent whose tools come from a local stdio MCP server.
 
-Prereqs: `pip install 'cosmo-ai-sdk[mcp,audio]'` and Node (for `npx`).
+Prereqs: `pip install 'cosmo-ai-sdk[mcp]'` and Node (for `npx`).
 Set COSMO_API_KEY (and COSMO_BASE_URL for a non-prod backend). Then:
 `python examples/mcp_agent.py`
 """

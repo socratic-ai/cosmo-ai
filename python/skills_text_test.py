@@ -60,7 +60,7 @@ async def run(prompt: str) -> None:
     client = CosmoRealtime(api_key=api_key)
     agent = client.agent(instructions=INSTRUCTIONS, skills=skills_dir)
     async with agent.start() as session:
-        await session.send_text(prompt, audio_response=False)
+        await session.send_text(prompt)
         async for event in session:
             if isinstance(event, RealtimeReady):
                 print(f"[ready] session_id={event.session_id}")

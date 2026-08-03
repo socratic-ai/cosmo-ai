@@ -84,7 +84,7 @@ let pump = Task {
 // Let the agent come up before the first turn (sending instantly races ready).
 try await Task.sleep(nanoseconds: 2_500_000_000)
 print("\n> user: \(prompt)\n")
-try await session.session.send(text: prompt, audioResponse: false)
+try await session.session.send(text: prompt)
 
 try await Task.sleep(nanoseconds: 12_000_000_000)
 print("\nending session…")
