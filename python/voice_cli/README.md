@@ -11,7 +11,7 @@ audio I/O, since livekit-rtc Python has none natively.)
 ## Quick start
 
 `sounddevice` needs the PortAudio native library (bundled in its wheels on
-macOS/Windows; on Linux install `libportaudio2`, e.g. `apt install libportaudio2`).
+macOS/Windows; on Linux install `libportaudio2`, for example, `apt install libportaudio2`).
 
 ```bash
 cd examples/voice_cli
@@ -20,7 +20,7 @@ pip install -e .
 cosmo-voice --api-key cosmo_...
 ```
 
-Or via environment variables:
+Or use environment variables:
 
 ```bash
 export COSMO_API_KEY=cosmo_...
@@ -29,13 +29,15 @@ cosmo-voice
 
 ## Options
 
+The following table lists the command-line flags and their environment-variable equivalents.
+
 | Flag | Env var | Default |
 |---|---|---|
 | `--api-key` | `COSMO_API_KEY` | — (required) |
 | `--voice` | — | server default |
 | `--model` | — | server default |
 
-The SDK targets `https://app.askcosmo.ai` by default; set the `COSMO_BASE_URL`
+The SDK targets `https://platform.askcosmo.ai` by default; set the `COSMO_BASE_URL`
 environment variable to point at another backend for local development.
 
 ## Sample output

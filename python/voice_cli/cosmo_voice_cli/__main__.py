@@ -11,7 +11,7 @@ Usage:
     # or via python -m
     python -m cosmo_voice_cli --api-key cosmo_...
 
-The SDK targets https://app.askcosmo.ai by default; set COSMO_BASE_URL to point
+The SDK targets https://platform.askcosmo.ai by default; set COSMO_BASE_URL to point
 at another backend for local development.
 """
 

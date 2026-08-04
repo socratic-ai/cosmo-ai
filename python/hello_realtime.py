@@ -8,7 +8,7 @@ Usage:
     pip install cosmo-ai-sdk
     COSMO_API_KEY=cosmo_... python examples/hello_realtime.py
 
-The SDK targets https://app.askcosmo.ai by default; set COSMO_BASE_URL to point
+The SDK targets https://platform.askcosmo.ai by default; set COSMO_BASE_URL to point
 at another backend for local development.
 """
 

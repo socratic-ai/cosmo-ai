@@ -6,16 +6,6 @@ let apiKey = ProcessInfo.processInfo.environment["COSMO_API_KEY"] ?? {
     exit(1)
 }()
 
-let baseURLString = ProcessInfo.processInfo.environment["COSMO_BASE_URL"] ?? {
-    fputs("error: set COSMO_BASE_URL environment variable (e.g. https://api.example.com)\n", stderr)
-    exit(1)
-}()
-
-guard let baseURL = URL(string: baseURLString) else {
-    fputs("error: COSMO_BASE_URL is not a valid URL: \(baseURLString)\n", stderr)
-    exit(1)
-}
-
 struct WeatherArgs: Decodable, Sendable {
     let city: String
     let unit: Unit?
@@ -43,7 +33,7 @@ let getWeather = try SessionConfig.Tool.define(
 // server-side, so there is no project_id to pass here.
 print("Connecting…")
 let session = try await RealtimeSession.start(
-    .init(apiKey: apiKey, baseURL: baseURL),
+    .init(apiKey: apiKey),
     config: SessionConfig(tools: [getWeather])
 )
 

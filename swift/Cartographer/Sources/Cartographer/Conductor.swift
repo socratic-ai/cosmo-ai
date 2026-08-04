@@ -64,10 +64,7 @@ final class Conductor: ObservableObject {
 
         do {
             let session = try await RealtimeSession.start(
-                .init(
-                    apiKey: key,
-                    baseURL: URL(string: "https://app.askcosmo.ai")!
-                ),
+                .init(apiKey: key),
                 config: SessionConfig(
                     voice: .init(name: "Zephyr"),
                     audio: .init(noiseCancellation: true),

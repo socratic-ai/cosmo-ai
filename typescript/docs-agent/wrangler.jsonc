@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cosmo-docs-agent",
+  "pages_build_output_dir": "dist",
+  "compatibility_date": "2026-07-01",
+  // sanitize-html reaches for a few node built-ins through htmlparser2.
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true }
+}

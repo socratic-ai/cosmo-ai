@@ -38,18 +38,18 @@ granting microphone access.
 Two details in `Conductor` are worth reading before you copy this shape into
 your own app:
 
-**Transcripts are not all the same.** A non-final `transcript` event carries
+**Transcripts aren't all the same.** A non-final `transcript` event carries
 only the new fragment for that turn, so you append it. The final event carries
 the whole turn, so you replace what you accumulated. Rendering both the same
 way duplicates every turn once it reaches a real UI.
 
-**Do not gate your UI on `ready`.** It is a single broadcast frame, and a
+**Don't gate your UI on `ready`.** It's a single broadcast frame, and a
 client whose data channel attaches late never sees it. `Conductor` latches the
 session live on the first event of any kind instead.
 
 ## `bundle.sh`
 
-`swift build` produces a bare executable, which is not enough to capture audio.
+`swift build` produces a bare executable, which isn't enough to capture audio.
 The script assembles a real `.app` because three things are required and none
 of them come for free outside Xcode:
 
@@ -58,7 +58,7 @@ of them come for free outside Xcode:
    prompt never appears.
 2. The macOS slice of LiveKit's binary xcframeworks copied into
    `Contents/Frameworks/`, plus an `@executable_path/../Frameworks` rpath.
-   SwiftPM links them but does not embed them, so a hand-assembled bundle dies
+   SwiftPM links them but doesn't embed them, so a hand-assembled bundle dies
    at launch on `Library not loaded: @rpath/LiveKitWebRTC.framework/...`.
 3. An ad-hoc signature with `com.apple.security.cs.disable-library-validation`.
    Those frameworks carry a different team identity, which the hardened
@@ -77,6 +77,6 @@ which makes it the quickest way to check a session works.
 COSMO_API_KEY=cosmo_... NO_AUDIO=1 swift run Probe
 ```
 
-Set `COSMO_BASE_URL` to point it somewhere other than `https://app.askcosmo.ai`.
+Set `COSMO_BASE_URL` to point it somewhere other than `https://platform.askcosmo.ai`.
 It writes to stderr because `print` is block-buffered when stdout is a pipe,
 which makes a live session look like a hang.

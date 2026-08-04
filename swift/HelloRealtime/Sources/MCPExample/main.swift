@@ -6,7 +6,7 @@ import Foundation
 // and watch the model call one of the server's `mcp__<server>__<tool>` tools
 // and act on the result.
 //
-//   COSMO_API_KEY=...  COSMO_BASE_URL=https://app.askcosmo.ai \
+//   COSMO_API_KEY=... \
 //     swift run MCPExample
 //
 // By default it loads ./mcp.json (the bundled `everything` server) and asks
@@ -23,10 +23,6 @@ func env(_ key: String) -> String {
 }
 
 let apiKey = env("COSMO_API_KEY")
-guard let baseURL = URL(string: env("COSMO_BASE_URL")) else {
-    fputs("error: COSMO_BASE_URL is not a valid URL\n", stderr)
-    exit(1)
-}
 let configPath = ProcessInfo.processInfo.environment["COSMO_MCP_CONFIG"] ?? "mcp.json"
 let prompt = ProcessInfo.processInfo.environment["COSMO_MCP_PROMPT"]
     ?? "Please use your echo tool to repeat the phrase 'hello from mcp' back to me, then tell me what it returned."
@@ -41,11 +37,11 @@ print("== loading MCP servers from \(configURL.path) ==")
 let registry = try McpRegistry.fromConfigFile(configURL)
 let agent = try Agent(mcp: registry)
 
-let options = RealtimeSession.Options(apiKey: apiKey, baseURL: baseURL)
+let options = RealtimeSession.Options(apiKey: apiKey)
 let config = SessionConfig(
     instructions: "You are a concise assistant. When a tool can answer, call it.")
 
-print("connecting to \(baseURL.absoluteString) (spawning MCP subprocess)…")
+print("connecting to \(options.baseURL.absoluteString) (spawning MCP subprocess)…")
 let session = try await agent.start(options, config: config, micMuted: true)
 
 var sawMcpCall = false

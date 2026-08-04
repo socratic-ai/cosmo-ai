@@ -1,0 +1,485 @@
+:root {
+  --bg: #0e0f13;
+  --surface: #171922;
+  --surface-2: #1f222e;
+  --line: #2a2e3d;
+  --text: #e8eaf2;
+  --muted: #9aa1b8;
+  --accent: #7c8cff;
+  --good: #45d19a;
+  --bad: #ff6b6b;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.55 -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif;
+}
+
+.shell {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.shell.reading {
+  max-width: none;
+  height: 100vh;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.masthead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+h1 {
+  margin: 4px 0 0;
+  font-size: 22px;
+}
+
+.shell:not(.reading) h1 {
+  font-size: 32px;
+}
+
+.lede,
+.sub {
+  margin: 6px 0 0;
+  color: var(--muted);
+}
+
+.sub {
+  font-size: 13px;
+}
+
+/* --- open step ---------------------------------------------------------- */
+
+.open-step {
+  margin-top: 36px;
+  display: grid;
+  gap: 18px;
+}
+
+.drop {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+  text-align: center;
+  padding: 44px 24px;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.drop:hover {
+  border-color: var(--accent);
+}
+
+.drop.busy {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.drop input {
+  display: none;
+}
+
+.drop span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.or {
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.url-row {
+  display: flex;
+  gap: 8px;
+}
+
+.url-row input {
+  flex: 1;
+}
+
+/* --- reader ------------------------------------------------------------- */
+
+.reader {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 16px;
+}
+
+.doc-scroll {
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.pdf-page {
+  position: relative;
+  margin: 0 auto 20px;
+  width: fit-content;
+  background: #fff;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.pdf-page canvas {
+  display: block;
+}
+
+.pdf-page-no {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  font-size: 11px;
+  color: #999;
+}
+
+.html-body {
+  max-width: 68ch;
+  margin: 0 auto;
+}
+
+.html-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.html-body a {
+  color: var(--accent);
+}
+
+.html-body pre {
+  overflow-x: auto;
+  background: var(--surface-2);
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.html-body table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.html-body td,
+.html-body th {
+  border: 1px solid var(--line);
+  padding: 6px 8px;
+}
+
+/* --- agent panel -------------------------------------------------------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.panel-intro {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+}
+
+.panel-intro h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.panel-intro p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.panel-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  margin-right: auto;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.status.live .status-dot {
+  background: var(--good);
+}
+
+.status.bad .status-dot {
+  background: var(--bad);
+}
+
+.transcript {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bubble {
+  padding: 8px 11px;
+  border-radius: 12px;
+  font-size: 14px;
+  max-width: 92%;
+  white-space: pre-wrap;
+}
+
+.bubble.user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #10121b;
+}
+
+.bubble.assistant {
+  align-self: flex-start;
+  background: var(--surface-2);
+}
+
+.bubble.partial {
+  opacity: 0.65;
+}
+
+.empty {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tools {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.tools ul {
+  margin: 6px 0 0;
+  padding-left: 16px;
+}
+
+.tool-status {
+  margin-left: 6px;
+}
+
+.tool-status.ok {
+  color: var(--good);
+}
+
+.tool-status.error {
+  color: var(--bad);
+}
+
+.composer {
+  display: flex;
+  gap: 8px;
+}
+
+.composer input {
+  flex: 1;
+}
+
+/* --- controls ----------------------------------------------------------- */
+
+input[type='text'],
+input[type='password'],
+input:not([type]) {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text);
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 14px;
+  min-width: 0;
+}
+
+input:focus {
+  outline: 1px solid var(--accent);
+}
+
+.btn {
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 8px 13px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #10121b;
+  font-weight: 600;
+}
+
+.btn-ghost {
+  background: transparent;
+}
+
+/* The label states what the mic *is*, and the dot repeats it in colour so the
+   state survives a glance. `aria-pressed` is set by the SDK's MicToggle. */
+.mic {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding-left: 11px;
+}
+
+.mic::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--good);
+}
+
+.mic[aria-pressed='true'] {
+  border-color: var(--bad);
+  color: var(--bad);
+}
+
+.mic[aria-pressed='true']::before {
+  background: var(--bad);
+}
+
+.mic:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.settings {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  font-size: 13px;
+}
+
+.settings summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+
+.field {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+}
+
+.field label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.unlock {
+  display: grid;
+  gap: 6px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.unlock strong {
+  font-size: 15px;
+}
+
+.unlock > span {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.unlock .url-row {
+  margin-top: 10px;
+}
+
+.unlock-error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--bad);
+}
+
+.field-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.field-note code {
+  font-size: 11px;
+  background: var(--surface-2);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.err {
+  background: rgba(255, 107, 107, 0.12);
+  border: 1px solid rgba(255, 107, 107, 0.35);
+  color: #ffbcbc;
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .reader {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) minmax(240px, 40vh);
+  }
+}

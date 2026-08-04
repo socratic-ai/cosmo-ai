@@ -5,7 +5,7 @@ import Foundation
 // open a real session through the Agent, send a user turn as text, and watch
 // the model call `load_skill` and follow the body.
 //
-//   COSMO_API_KEY=...  COSMO_BASE_URL=https://app.askcosmo.ai \
+//   COSMO_API_KEY=... \
 //     swift run SkillsExample
 //
 // Optional: COSMO_SKILL_PROMPT to override the opening user turn.
@@ -19,10 +19,6 @@ func env(_ key: String) -> String {
 }
 
 let apiKey = env("COSMO_API_KEY")
-guard let baseURL = URL(string: env("COSMO_BASE_URL")) else {
-    fputs("error: COSMO_BASE_URL is not a valid URL\n", stderr)
-    exit(1)
-}
 let prompt = ProcessInfo.processInfo.environment["COSMO_SKILL_PROMPT"]
     ?? "I just got my new card in the mail. How do I activate it?"
 
@@ -44,10 +40,10 @@ print("== resident menu (appended to instructions) ==")
 print(skillsMenuText(skills))
 print("==============================================\n")
 
-let options = RealtimeSession.Options(apiKey: apiKey, baseURL: baseURL)
+let options = RealtimeSession.Options(apiKey: apiKey)
 let config = SessionConfig(instructions: "You are Alex, a concise phone support agent.")
 
-print("connecting to \(baseURL.absoluteString)…")
+print("connecting to \(options.baseURL.absoluteString)…")
 let session = try await agent.start(options, config: config, micMuted: true)
 
 let pump = Task {

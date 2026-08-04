@@ -16,7 +16,20 @@ import { tool } from 'cosmo-ai/tool';
 import { zodInput } from 'cosmo-ai/tool/zod';
 import { z } from 'zod/v4';
 
-const BASE_URL_DEFAULT = 'https://api.trysocratic.ai';
+const BASE_URL_DEFAULT = 'https://platform.askcosmo.ai';
+
+/** Name the backend from inside the page. The SDK reads ``COSMO_BASE_URL``
+ *  on Node; a browser has no environment, so it reads this tag instead —
+ *  normally written by the server that rendered the page. */
+function setCosmoBaseUrl(baseUrl: string): void {
+  let tag = document.querySelector('meta[name="cosmo-base-url"]');
+  if (tag === null) {
+    tag = document.createElement('meta');
+    tag.setAttribute('name', 'cosmo-base-url');
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute('content', baseUrl);
+}
 
 const getLocalTime = tool({
   name: 'get_local_time',
@@ -156,10 +169,8 @@ export function App() {
   const handleStart = useCallback(
     async (apiKey: string, baseUrl: string) => {
       setConnecting(true);
-      const opts: RealtimeClientOptions = {
-        baseUrl,
-        apiKey,
-      };
+      setCosmoBaseUrl(baseUrl);
+      const opts: RealtimeClientOptions = { apiKey };
       const c = new RealtimeClient(opts);
       clientRef.current = c;
       try {

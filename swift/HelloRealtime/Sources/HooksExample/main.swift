@@ -7,7 +7,7 @@ import Foundation
 // outcome), SessionEnd (observe exit reason).
 //
 // Run:
-//   COSMO_API_KEY=... COSMO_BASE_URL=https://app.askcosmo.ai swift run HooksExample
+//   COSMO_API_KEY=... swift run HooksExample
 //
 // Optional env overrides:
 //   COSMO_HOOKS_PROMPT1  — first user turn  (default: balance query)
@@ -25,10 +25,6 @@ func env(_ key: String) -> String {
 }
 
 let apiKey = env("COSMO_API_KEY")
-guard let baseURL = URL(string: env("COSMO_BASE_URL")) else {
-    fputs("error: COSMO_BASE_URL is not a valid URL\n", stderr)
-    exit(1)
-}
 
 let prompt1 = ProcessInfo.processInfo.environment["COSMO_HOOKS_PROMPT1"]
     ?? "Hi, what's the balance on my checking account?"
@@ -108,10 +104,10 @@ let hooks: [Hook] = [
 
 let agent = try Agent(tools: [getBalanceTool, deleteAccountTool], hooks: hooks)
 
-let options = RealtimeSession.Options(apiKey: apiKey, baseURL: baseURL)
+let options = RealtimeSession.Options(apiKey: apiKey)
 let config = SessionConfig(instructions: "You are a concise bank phone-support agent. Keep replies short.")
 
-print("connecting to \(baseURL.absoluteString)…")
+print("connecting to \(options.baseURL.absoluteString)…")
 let session = try await agent.start(options, config: config, micMuted: true)
 
 let pump = Task {

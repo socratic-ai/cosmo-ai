@@ -11,9 +11,6 @@ func say(_ s: String) { fputs(s + "\n", stderr) }
 let key = ProcessInfo.processInfo.environment["COSMO_API_KEY"] ?? ""
 guard !key.isEmpty else { say("set COSMO_API_KEY"); exit(1) }
 
-let base = URL(string: ProcessInfo.processInfo.environment["COSMO_BASE_URL"]
-    ?? "https://app.askcosmo.ai")!
-
 actor Collected {
     private(set) var ideas: [String] = []
     func add(_ s: String) { ideas.append(s) }
@@ -41,11 +38,12 @@ let addIdea = try SessionConfig.Tool.define(
     return ["id": .string(args.idea.lowercased().replacingOccurrences(of: " ", with: "-"))]
 }
 
-say("connecting to \(base.host ?? "?") …")
+let options = RealtimeSession.Options(apiKey: key)
+say("connecting to \(options.baseURL.host ?? "?") …")
 let t0 = Date()
 
 let session = try await RealtimeSession.start(
-    .init(apiKey: key, baseURL: base),
+    options,
     config: SessionConfig(
         audio: .init(
             output: ProcessInfo.processInfo.environment["NO_AUDIO"] == "1" ? false : nil

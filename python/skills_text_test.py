@@ -49,7 +49,7 @@ async def run(prompt: str) -> None:
     api_key = os.environ.get("COSMO_API_KEY")
     if not api_key:
         sys.exit("Set COSMO_API_KEY (a workspace api key) to run this test.")
-    base_url = os.environ.get("COSMO_BASE_URL", "https://app.askcosmo.ai")
+    base_url = os.environ.get("COSMO_BASE_URL", "https://platform.askcosmo.ai")
 
     skills_dir = Path(__file__).parent / "skills"
     print("Skills directories found (local, from examples/skills/):")

@@ -5,7 +5,7 @@ TypeScript SDK for Cosmo voice sessions.
 
 ## What it shows
 
-- `CosmoRealtimeProvider` wrapping a manually-constructed `RealtimeClient`
+- `CosmoRealtimeProvider` wrapping a manually constructed `RealtimeClient`
 - `RealtimeAudio` for automatic audio output binding
 - `MicToggle` for push-to-talk / mute control
 - `useTranscript()` rendering a live turn-by-turn transcript stream
@@ -20,8 +20,8 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173, enter your API key, then click
-**Start Session**.  Allow microphone access when the browser asks.
+Open http://localhost:5173, enter your API key, then select
+**Start Session**. Allow microphone access when the browser asks.
 
 The `cosmo-ai` dependency is `file:../..` — this example lives inside
 the SDK package at `examples/realtime-page/`, so two levels up is the SDK
@@ -29,6 +29,8 @@ root. Build the SDK first (`npm run build` in the SDK root) so `dist/`
 exists; CI does the same.
 
 ## Environment
+
+The following table describes the fields the page asks for.
 
 | Field | Description |
 |---|---|
