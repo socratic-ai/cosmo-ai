@@ -1,0 +1,7 @@
+// Cloudflare Workers config: `npx wrangler deploy`, then
+// `npx wrangler secret put COSMO_API_KEY` (and MINT_SECRET if used).
+{
+  "name": "cosmo-token-server",
+  "main": "handler.js",
+  "compatibility_date": "2026-08-01"
+}

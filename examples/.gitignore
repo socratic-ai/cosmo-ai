@@ -1,0 +1,14 @@
+# Build and dependency artifacts for the example apps (all languages).
+.build/
+.swiftpm/
+DerivedData/
+node_modules/
+dist/
+*.tsbuildinfo
+__pycache__/
+*.py[cod]
+build/
+*.egg-info/
+.venv/
+venv/
+.env

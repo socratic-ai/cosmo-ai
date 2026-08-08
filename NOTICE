@@ -1,0 +1,9 @@
+Cosmo AI — examples
+Copyright 2026 Socratic AI, Inc.
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+These examples depend on the published Cosmo SDK packages (cosmo-ai on npm,
+cosmo-ai-sdk on PyPI, and the Cosmo Swift package). See each SDK's own NOTICE
+for its third-party attributions. A dependency-license review found no copyleft
+(GPL/AGPL/LGPL/MPL) components.

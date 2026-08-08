@@ -1,0 +1,30 @@
+{
+  "name": "cosmo-squat-coach",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "server": "node server/index.js",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "cosmo-ai": "^0.3.0",
+    "dotenv": "^17",
+    "express": "^5",
+    "livekit-client": "^2",
+    "multer": "^2",
+    "react": "^19",
+    "react-dom": "^19",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4",
+    "typescript": "^5",
+    "vite": "^5"
+  }
+}

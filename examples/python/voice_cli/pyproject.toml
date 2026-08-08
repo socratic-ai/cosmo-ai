@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cosmo-voice-cli-example"
+version = "0.1.0"
+description = "Minimal voice CLI demo using cosmo-ai-sdk"
+requires-python = ">=3.10"
+dependencies = [
+    "cosmo-ai-sdk~=0.3.0",
+]
+
+[project.scripts]
+cosmo-voice = "cosmo_voice_cli.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cosmo_voice_cli*"]

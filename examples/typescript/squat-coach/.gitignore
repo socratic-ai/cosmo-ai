@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.uploads/
+.generated/
+pipeline/venv/
+pipeline/models/
+pipeline/__pycache__/

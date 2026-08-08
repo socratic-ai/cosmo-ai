@@ -1,0 +1,10 @@
+{
+  "name": "cosmo-token-server",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Minimal token-minting backend for apps built on the Cosmo realtime SDKs",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
