@@ -1,0 +1,39 @@
+name: ChessReferee
+options:
+  bundleIdPrefix: ai.socratic.examples
+  deploymentTarget:
+    iOS: "17.0"
+packages:
+  RefereeKit:
+    path: RefereeKit
+  CosmoSwiftSDK:
+    url: https://github.com/socratic-ai/cosmo-swift-sdk
+    from: 0.4.0
+targets:
+  ChessReferee:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: App/Models/yolo9t_chess.onnx
+        buildPhase: resources
+        optional: true
+    dependencies:
+      - package: RefereeKit
+        product: RefereeKit
+      - package: CosmoSwiftSDK
+        product: CosmoRealtime
+    info:
+      path: App/Info.plist
+      properties:
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSCameraUsageDescription: >-
+          The referee watches the chess board through the camera to read the
+          position on-device.
+        NSMicrophoneUsageDescription: >-
+          Talk to the referee during the game.
+    settings:
+      base:
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.9"

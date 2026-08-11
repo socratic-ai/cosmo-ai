@@ -49,6 +49,7 @@ Each example depends on the published SDK packages and states what it needs
 | [`examples/python`](examples/python) | Minimal session (`hello_realtime.py`), a terminal voice client (`voice_cli`), outbound calling, and hooks / skills / MCP agents |
 | [`examples/swift/HelloRealtime`](examples/swift/HelloRealtime) | Minimal macOS voice session, plus MCP, hooks, and skills variants |
 | [`examples/swift/Cartographer`](examples/swift/Cartographer) | A GUI macOS agent app |
+| [`examples/swift/ChessReferee`](examples/swift/ChessReferee) | An iOS voice referee for a physical chess game: a 9MB ONNX detector reads the board on-device, and the agent interjects unprompted on illegal moves |
 
 ## Issues and contributions
 
