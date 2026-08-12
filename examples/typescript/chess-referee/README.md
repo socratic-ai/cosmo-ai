@@ -39,7 +39,7 @@ there's something worth saying.
 src/
   referee.ts        stability gate, move inference, verdicts (pure; tested)
   referee_loop.ts   capture → endpoint → referee polling loop
-  board_vision.ts   client for POST /api/v1/chess/board-position
+  board_vision.ts   client for POST /api/v1/external/chess/board-position
   frame_capture.ts  camera/screen frame → JPEG blob at capture resolution
   tools.ts          get_chess_board_position client tool
   instructions.ts   referee persona + the [referee-alert] contract

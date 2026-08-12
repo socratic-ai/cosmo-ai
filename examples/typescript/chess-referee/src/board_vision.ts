@@ -24,20 +24,33 @@ export type BoardVisionConfig = {
   apiKey: string;
 };
 
-const ENDPOINT_PATH = '/api/v1/chess/board-position';
+const ENDPOINT_PATH = '/api/v1/external/chess/board-position';
+
+async function toBase64(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
 
 export async function readBoardPosition(
   config: BoardVisionConfig,
   frame: Blob,
   orientation?: BoardOrientation,
 ): Promise<BoardPositionResult> {
-  const form = new FormData();
-  form.append('image', frame, 'board.jpg');
-  if (orientation !== undefined) form.append('orientation', orientation);
   const res = await fetch(`${config.baseUrl.replace(/\/$/, '')}${ENDPOINT_PATH}`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${config.apiKey}` },
-    body: form,
+    headers: {
+      Authorization: `Bearer ${config.apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      image_base64: await toBase64(frame),
+      ...(orientation !== undefined ? { orientation } : {}),
+    }),
   });
   if (!res.ok) {
     throw new Error(`board-position endpoint returned ${res.status}`);

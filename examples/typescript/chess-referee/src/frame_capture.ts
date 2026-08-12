@@ -19,7 +19,7 @@ export class FrameCapture {
     });
   }
 
-  async capture(type = 'image/jpeg', quality = 0.9): Promise<Blob> {
+  async capture(type = 'image/jpeg', quality = 0.8): Promise<Blob> {
     await this.ready;
     const { videoWidth, videoHeight } = this.video;
     if (videoWidth === 0 || videoHeight === 0) {
