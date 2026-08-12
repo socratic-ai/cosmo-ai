@@ -1,0 +1,29 @@
+{
+  "name": "cosmo-chess-referee",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "chess.js": "^1.4.0",
+    "cosmo-ai": "^0.3.0",
+    "livekit-client": "^2",
+    "react": "^19",
+    "react-dom": "^19",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4",
+    "typescript": "^5",
+    "vite": "^5",
+    "vitest": "^3"
+  }
+}
