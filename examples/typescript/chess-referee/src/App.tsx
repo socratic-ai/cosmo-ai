@@ -13,6 +13,11 @@ import { FrameCapture } from './frame_capture';
 import { REFEREE_ALERT_TAG, REFEREE_INSTRUCTIONS } from './instructions';
 import { Referee, type RefereeEvent } from './referee';
 import { startRefereeLoop } from './referee_loop';
+import { makeAnalyzePositionTool } from './analysis/analyze_position';
+import {
+  disposeAnalysisEngine,
+  warmAnalysisEngine,
+} from './analysis/stockfish_transport';
 import { makeBoardPositionTool } from './tools';
 
 // Prefill from a gitignored .env for local dev convenience (see .env.example).
@@ -195,6 +200,7 @@ export function App() {
     clientRef.current = null;
     captureRef.current?.dispose();
     captureRef.current = null;
+    disposeAnalysisEngine();
     setStream(null);
     setVerdict('');
     setReadError(null);
@@ -215,6 +221,7 @@ export function App() {
     const client = new RealtimeClient({ apiKey });
     try {
       capture = new FrameCapture(await openBoardStream(source));
+      warmAnalysisEngine();
       await client
         .agent({
           instructions: REFEREE_INSTRUCTIONS,
@@ -225,6 +232,7 @@ export function App() {
               referee,
               orientation: pinned,
             }),
+            makeAnalyzePositionTool(),
           ],
           greeting:
             "Hi, I'm your referee — set the pieces up in the starting position and I'll follow along.",

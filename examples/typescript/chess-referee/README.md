@@ -22,6 +22,7 @@ the tools, and the interjection carry over unchanged.
 | `sendContext()` for silent live app state | `App.tsx` `forward()` — every move streams as a `[board]` note; the agent stays quiet |
 | Interjection: a tagged `sendText(…, { transcript: false })` directive | same function — on an illegal or out-of-turn move; the directive never appears in the transcript |
 | A client tool backed by an HTTP endpoint | `get_chess_board_position` in `tools.ts` — canvas frame capture, one POST, FEN back to the model |
+| A pure client tool — compute on the user's machine | `analyze_position` in `analysis/` — Stockfish wasm in a web worker, no backend round-trip |
 
 Why not `sendContext` alone? Context notes never trigger a spoken response by
 design. The referee moment is a regular text turn tagged `[referee-alert]`,
@@ -44,10 +45,37 @@ src/
   tools.ts          get_chess_board_position client tool
   instructions.ts   referee persona + the [referee-alert] contract
   App.tsx           setup form, session view, event → session wiring
+  analysis/
+    engine.ts             minimal UCI client over a message-port transport
+    stockfish_transport.ts  web-worker transport + one lazy engine per app
+    position.ts           FEN legality gate + SAN/eval rendering (chess.js)
+    analyze_core.ts       validate → search → top moves with eval and line
+    analyze_position.ts   the analyze_position client tool
 ```
 
-`analyze_position` (client-side stockfish.wasm) slots in alongside
-`get_chess_board_position` in `tools.ts` — same `ToolContext`, no server.
+## Client-side analysis (`analyze_position`)
+
+Ask the referee what to play and it consults Stockfish — compiled to
+WebAssembly, running in a web worker on the user's machine. The contract
+mirrors the Cosmo backend's `start_chess_analysis` tool, so instructions
+written against either work unchanged: the placement from
+`get_chess_board_position` goes in (passed through, never model-authored),
+top moves with eval and a short expected line come out.
+
+Two deliberate choices:
+
+- **Single-threaded lite build** (`stockfish-18-lite-single`): the
+  multithreaded builds need SharedArrayBuffer and therefore COOP/COEP
+  headers on every response, which most dev servers and static hosts don't
+  send. Single-threaded lite reaches coaching depth (~12–15) inside its
+  750 ms budget and runs anywhere.
+- **Served from `public/stockfish/`, not bundled**: the engine `.js` runs
+  directly as a worker and fetches its `.wasm` relative to its own URL;
+  `scripts/copy_stockfish.mjs` copies both there at install time.
+
+Note: the [`stockfish`](https://www.npmjs.com/package/stockfish) package is
+GPL-3.0-licensed. This example depends on it as-is; mind the license if you
+reuse this code in your own product.
 
 ## Run it
 
@@ -80,7 +108,8 @@ needs even light, a near-top-down angle, and a standard piece set. Misreads
 that survive the stability gate are classified against the rules engine, so
 the common failure mode is a missed event, not a false accusation.
 
-The referee state machine is pure TypeScript and tested:
+The referee state machine and the analysis stack are pure TypeScript and
+tested — including against the real wasm engine:
 
 ```bash
 npm test

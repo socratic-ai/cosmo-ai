@@ -8,10 +8,12 @@
     "build": "vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "node scripts/copy_stockfish.mjs"
   },
   "dependencies": {
     "chess.js": "^1.4.0",
+    "stockfish": "^18.0.8",
     "cosmo-ai": "^0.3.0",
     "livekit-client": "^2",
     "react": "^19",
