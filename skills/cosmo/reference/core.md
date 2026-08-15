@@ -45,17 +45,17 @@ pages), defaulting to `https://platform.askcosmo.ai`.
 
 ## Cross-SDK gotchas
 
-- **Voices are personas, not provider voice names** (`Breezy`, `Youthful`,
-  `Upbeat`, `Informative`, `Firm`, `Confident`, `Excitable`, `Bright`,
-  `Marin`, `Cedar`). Raw Gemini names still normalise but don't write
-  them. **An unrecognized voice does not raise** — the server falls back
-  to the default persona and logs a warning, so a typo ships as the wrong
-  voice, never as an error. Spell exactly.
+- **A voice is the provider's own** (`Aoede` / `Puck` on Gemini,
+  `shimmer` / `cedar` on OpenAI, a catalog id on Cosmo Voice). Nothing is
+  translated between providers, so a voice picked for one means nothing to
+  another. **An unrecognized voice does not raise** — the server falls back
+  to that provider's default and logs a warning, so a typo ships as the
+  wrong voice, never as an error. Spell exactly.
 - **Iteration is the way to observe a session** (`async for` /
   `for await` / `for try await`). Unknown frames surface as
-  `UnknownEvent` and are never fatal; `RealtimeSessionEnded` is always
+  `UnknownEvent` and are never fatal; `SessionEndedEvent` is always
   the last item — don't add your own sentinel.
-- **A non-fatal in-stream `RealtimeError` does not end the session** —
+- **A non-fatal in-stream `ErrorEvent` does not end the session** —
   don't tear down on every error event. `VersionMismatchError` at
   construction means upgrade the SDK, not retry.
 - **Client tools come in two kinds, and the plain one blocks.** A regular
@@ -70,7 +70,7 @@ pages), defaulting to `https://platform.askcosmo.ai`.
   wire shape; the handler signature is the whole difference. Reach for it
   before wrapping a slow tool in a timeout or splitting it into a poll.
 - **A declared tool with no handler and no server execution is rejected**,
-  surfaced in `RealtimeReady.rejected_tools` — check it instead of
+  surfaced in `ReadyEvent.rejected_tools` — check it instead of
   wondering why a tool is never called.
 - **`session.dial(phone_number)` needs an API-key session** — minted
   end-user tokens cannot dial.

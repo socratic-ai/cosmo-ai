@@ -20,6 +20,7 @@ to point at another backend.
 | Example | Shows |
 |---|---|
 | `hello_realtime.py` | The core loop: an inline agent with one client tool, a text turn, and the typed event stream printed as it arrives. |
+| `deep_thinker.py` | Background client tools: a hard question is delegated to a more capable reasoning model while the agent keeps talking, and the answer is announced when it lands. Needs `pip install anthropic` and `ANTHROPIC_API_KEY`. |
 | `hooks_agent.py` | Hooks: deny a destructive tool and log every tool outcome. |
 | `mcp_agent.py` | Tools from a local stdio MCP server (`pip install 'cosmo-ai-sdk[mcp]'` and Node for `npx`; the server list lives in `mcp.json`). |
 | `skills_agent.py` | Skills loaded just-in-time from the `SKILL.md` files under `skills/`. |

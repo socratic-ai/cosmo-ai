@@ -1,0 +1,18 @@
+Cosmo Python SDK (cosmo-ai-sdk)
+Copyright 2026 Socratic AI, Inc.
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes or depends on the following third-party open-source
+software, each under its own license. A dependency-license review found no
+copyleft (GPL/AGPL/LGPL/MPL) components.
+
+  - livekit (LiveKit Python SDK) .............. Apache License 2.0
+  - httpx ..................................... BSD 3-Clause License
+  - pydantic .................................. MIT License
+  - sounddevice ............................... MIT License
+  - structlog ................................. MIT License / Apache License 2.0 (dual-licensed)
+  - mcp (Model Context Protocol SDK, optional)  MIT License
+
+Realtime transport uses WebRTC (BSD 3-Clause License, with an additional patent
+grant) by way of LiveKit.

@@ -1,8 +1,8 @@
 import CosmoRealtime
 import Foundation
 
-// A headless live proof of the Agent + Skills loop: declare one hot skill,
-// open a real session through the Agent, send a user turn as text, and watch
+// A headless live proof of the RealtimeAgent + Skills loop: declare one hot skill,
+// open a real session through the RealtimeAgent, send a user turn as text, and watch
 // the model call `cosmo_sdk_load_skill` and follow the body.
 //
 //   swift run SkillsExample
@@ -24,7 +24,7 @@ or the mobile app, then give the matching two-step flow. Ask one question at a
 time and keep replies short.
 """
 let skills = [try parseSkillMd(skillMarkdown, defaultName: "activate-card")]
-let agent = try Agent(skills: skills)
+let agent = try RealtimeAgent(skills: skills)
 
 print("== resident menu (appended to instructions) ==")
 print(skillsMenuText(skills))
@@ -38,7 +38,7 @@ let session = try await agent.start(options, config: config, micMuted: true)
 
 let pump = Task {
     do {
-        for try await event in session.session.events {
+        for try await event in session.events {
             switch event {
             case .ready:
                 print("● READY — session live")
@@ -70,7 +70,7 @@ let pump = Task {
 // Let the agent come up before the first turn (sending instantly races ready).
 try await Task.sleep(nanoseconds: 2_500_000_000)
 print("\n> user: \(prompt)\n")
-try await session.session.send(text: prompt)
+try await session.send(text: prompt)
 
 try await Task.sleep(nanoseconds: 12_000_000_000)
 print("\nending session…")

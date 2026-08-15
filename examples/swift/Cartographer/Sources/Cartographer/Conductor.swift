@@ -66,7 +66,7 @@ final class Conductor: ObservableObject {
             let session = try await RealtimeSession.start(
                 .init(),
                 config: SessionConfig(
-                    voice: .init(name: "Upbeat"),
+                    voice: .init(name: "Puck"),
                     audio: .init(noiseCancellation: true),
                     instructions: Self.instructions,
                     tools: try mapTools(),

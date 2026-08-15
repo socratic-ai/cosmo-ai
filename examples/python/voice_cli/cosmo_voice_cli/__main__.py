@@ -22,19 +22,19 @@ import asyncio
 import sys
 
 from cosmo_ai import (
-    CosmoRealtime,
-    RealtimeError,
-    RealtimeReady,
+    RealtimeClient,
+    ErrorEvent,
+    ReadyEvent,
     RealtimeSession,
-    RealtimeSessionEnded,
-    RealtimeToolCall,
-    RealtimeTranscriptDelta,
+    SessionEndedEvent,
+    ToolCallEvent,
+    TranscriptDeltaEvent,
 )
 
 
 async def _print_events(session: RealtimeSession) -> None:
     async for event in session:
-        if isinstance(event, RealtimeReady):
+        if isinstance(event, ReadyEvent):
             print(
                 f"[ready] session_id={session.session_id}",
                 flush=True,
@@ -44,23 +44,23 @@ async def _print_events(session: RealtimeSession) -> None:
                 "Press Enter (blank line) to end.",
                 flush=True,
             )
-        elif isinstance(event, RealtimeTranscriptDelta):
+        elif isinstance(event, TranscriptDeltaEvent):
             marker = "»" if event.is_final else "…"
             print(f"  [{event.role.value}] {event.text}{marker}", flush=True)
-        elif isinstance(event, RealtimeToolCall):
+        elif isinstance(event, ToolCallEvent):
             print(f"  [tool] {event.name} (id={event.tool_call_id})", flush=True)
-        elif isinstance(event, RealtimeError):
+        elif isinstance(event, ErrorEvent):
             print(
                 f"  [error] {event.code.value}: {event.message}",
                 file=sys.stderr,
                 flush=True,
             )
-        elif isinstance(event, RealtimeSessionEnded):
+        elif isinstance(event, SessionEndedEvent):
             print(f"  [ended] {event.reason}", flush=True)
 
 
 async def run(api_key: str | None, voice: str | None, model: str | None) -> None:
-    async with CosmoRealtime(api_key=api_key) as client:
+    async with RealtimeClient(api_key=api_key) as client:
         print("Connecting…", flush=True)
         agent = client.agent(voice=voice, model=model)
         async with agent.start() as session:

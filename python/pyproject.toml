@@ -1,0 +1,76 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cosmo-ai-sdk"
+version = "0.4.0"
+description = "Cosmo Realtime SDK — typed event-stream client for voice + multimodal sessions"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Socratic AI, Inc." }]
+keywords = ["cosmo", "realtime", "voice", "livekit", "sdk"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "httpx>=0.27",
+    "livekit>=1.1.12",
+    "pydantic>=2.7",
+    "sounddevice>=0.4",
+    "structlog>=23.1",
+    "tomli>=2; python_version < '3.11'",
+]
+
+[project.urls]
+Homepage = "https://askcosmo.ai"
+Repository = "https://github.com/socratic-ai/cosmo-ai"
+Source = "https://github.com/socratic-ai/cosmo-ai/tree/main/python"
+
+[project.optional-dependencies]
+# Kept empty for backward compatibility: `pip install "cosmo-ai-sdk[livekit]"`
+# and `[audio]` predate livekit and sounddevice becoming hard dependencies.
+livekit = []
+audio = []
+mcp = ["mcp>=1.14,<2"]
+dev = ["pytest", "pytest-asyncio", "mypy", "ruff"]
+
+[tool.setuptools]
+license-files = ["LICENSE", "NOTICE", "THIRD-PARTY-LICENSES.md"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.mypy]
+strict = true
+
+# Tests are checked (bodies included), minus the annotation ceremony strict
+# demands of production code: untyped test defs/helpers and bare generics in
+# fixtures stay legal; real type errors (wrong argument types, bad attribute
+# access) still fail.
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_any_generics = false
+check_untyped_defs = true
+
+# Pin the rule set explicitly: CI installs the latest ruff, whose default
+# selection can grow across releases (0.16.0 did). New rule families are
+# adopted deliberately, not by release drift.
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401"]

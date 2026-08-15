@@ -11,7 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "cosmo-ai": "^0.3.0",
+    "cosmo-ai": "latest",
     "dotenv": "^17",
     "express": "^5",
     "livekit-client": "^2",

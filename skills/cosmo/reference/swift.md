@@ -6,7 +6,8 @@ https://platform.askcosmo.ai/docs. This file is the Swift gotchas.
 ## Current shape
 
 Package `https://github.com/socratic-ai/cosmo-swift-sdk`, product
-`CosmoRealtime`, pinned `.upToNextMinor` (pre-1.0). macOS 13+ / iOS 16+,
+`CosmoRealtime`, added with `from:` (tracks every release below 1.0; if a
+documented API is missing, `swift package update`). macOS 13+ / iOS 16+,
 Swift 5.9+. That is the SDK's floor; an individual example may declare a
 higher one of its own (Cartographer targets macOS 14).
 
@@ -16,7 +17,7 @@ higher one of its own (Cartographer targets macOS 14).
 let session = try await RealtimeSession.start(
     try RealtimeSession.Options(),
     config: SessionConfig(
-        voice: .init(name: "Upbeat"),
+        voice: .init(name: "Puck"),
         instructions: "You are terse."
     )
 )

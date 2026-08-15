@@ -7,21 +7,21 @@ https://platform.askcosmo.ai/docs. This file is the Python gotchas.
 
 ```python
 import asyncio
-from cosmo_ai import CosmoRealtime, RealtimeSessionEnded, RealtimeTranscriptDelta
+from cosmo_ai import RealtimeClient, SessionEndedEvent, TranscriptDeltaEvent
 
 async def main() -> None:
     # Zero-argument: resolves COSMO_API_KEY, else the `cosmo login`
     # credentials file. Pass api_key=... / token=... to override.
-    async with CosmoRealtime() as client:
-        agent = client.agent(instructions="You are a terse assistant.", voice="Upbeat")
+    async with RealtimeClient() as client:
+        agent = client.agent(instructions="You are a terse assistant.", voice="Puck")
         async with agent.start() as session:
             await session.set_microphone_enabled(True)
             await session.set_speaker_enabled(True)
             async for event in session:
                 match event:
-                    case RealtimeTranscriptDelta():
+                    case TranscriptDeltaEvent():
                         print(event.text)
-                    case RealtimeSessionEnded():
+                    case SessionEndedEvent():
                         print("ended:", event.reason)
 
 asyncio.run(main())

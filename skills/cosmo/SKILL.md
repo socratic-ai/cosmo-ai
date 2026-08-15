@@ -35,7 +35,7 @@ SDK resolves `COSMO_API_KEY` from the environment, else the stored
 credentials file, and adopts the backend the stored key was issued for:
 
 ```python
-client = CosmoRealtime()                       # Python
+client = RealtimeClient()                       # Python
 ```
 
 ```ts

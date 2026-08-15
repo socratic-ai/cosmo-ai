@@ -1,0 +1,30 @@
+{
+  "name": "cosmo-garden-doctor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p functions",
+    "preview": "vite preview",
+    "pages:build": "VITE_COSMO_API_KEY= vite build && node scripts/assert-no-credential.js",
+    "pages:dev": "npm run pages:build && wrangler pages dev",
+    "pages:deploy": "npm run pages:build && wrangler pages deploy"
+  },
+  "dependencies": {
+    "cosmo-ai": "latest",
+    "livekit-client": "^2",
+    "react": "^19",
+    "react-dom": "^19"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4",
+    "typescript": "^5",
+    "vite": "^6",
+    "wrangler": "^4"
+  }
+}

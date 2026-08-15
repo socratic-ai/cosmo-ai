@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.eggs/
+dist/
+build/
+.venv/
+venv/
+env/
+# A distributed library pins nothing: consumers resolve from pyproject.toml.
+# poetry.lock is not opt-in: any poetry command run here writes one, because
+# poetry claims every directory holding a pyproject.toml.
+uv.lock
+poetry.lock
+_generated/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+*.so

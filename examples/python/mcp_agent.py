@@ -8,11 +8,11 @@ Sign in with `cosmo login` (or set COSMO_API_KEY; COSMO_BASE_URL for a non-prod 
 import asyncio
 from pathlib import Path
 
-from cosmo_ai import CosmoRealtime
+from cosmo_ai import RealtimeClient
 
 
 async def main() -> None:
-    client = CosmoRealtime()
+    client = RealtimeClient()
     agent = client.agent(
         instructions="You can use the connected MCP tools to help the user.",
         mcp=Path(__file__).parent / "mcp.json",

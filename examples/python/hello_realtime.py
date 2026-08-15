@@ -19,13 +19,13 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from cosmo_ai import (
-    CosmoRealtime,
-    RealtimeError,
-    RealtimeReady,
-    RealtimeSessionEnded,
-    RealtimeToolCall,
-    RealtimeToolResult,
-    RealtimeTranscriptDelta,
+    RealtimeClient,
+    ErrorEvent,
+    ReadyEvent,
+    SessionEndedEvent,
+    ToolCallEvent,
+    ToolResultEvent,
+    TranscriptDeltaEvent,
     UnknownEvent,
     tool,
 )
@@ -44,7 +44,7 @@ async def get_current_time(input: TimeInput) -> dict[str, Any]:
 
 
 async def main() -> None:
-    async with CosmoRealtime() as client:
+    async with RealtimeClient() as client:
         agent = client.agent(
             instructions="You are a terse assistant.",
             tools=[get_current_time],
@@ -66,21 +66,21 @@ async def main() -> None:
             driver = asyncio.create_task(drive())
 
             async for event in session:
-                if isinstance(event, RealtimeReady):
+                if isinstance(event, ReadyEvent):
                     print(f"[ready] session_id={event.session_id}")
-                elif isinstance(event, RealtimeTranscriptDelta):
+                elif isinstance(event, TranscriptDeltaEvent):
                     marker = "»" if event.is_final else "…"
                     print(f"[transcript:{event.role.value}] {event.text}{marker}")
-                elif isinstance(event, RealtimeToolCall):
+                elif isinstance(event, ToolCallEvent):
                     print(f"[tool_call] {event.name} (id={event.tool_call_id})")
-                elif isinstance(event, RealtimeToolResult):
+                elif isinstance(event, ToolResultEvent):
                     status = "ok" if event.ok else "err"
                     print(f"[tool_result:{status}] {event.summary}")
-                elif isinstance(event, RealtimeError):
+                elif isinstance(event, ErrorEvent):
                     print(f"[error] {event.code.value}: {event.message}")
                 elif isinstance(event, UnknownEvent):
                     print(f"[unknown] raw_type={event.raw_type}")
-                elif isinstance(event, RealtimeSessionEnded):
+                elif isinstance(event, SessionEndedEvent):
                     print(f"[session-ended] {event.reason}")
 
             await driver

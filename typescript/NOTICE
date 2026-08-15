@@ -1,0 +1,15 @@
+Cosmo TypeScript SDK (cosmo-ai)
+Copyright 2026 Socratic AI, Inc.
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product declares the following peer dependencies (provided by the consuming
+application), each under its own license. A dependency-license review found no
+copyleft (GPL/AGPL/LGPL/MPL) components.
+
+  - livekit-client (LiveKit JS SDK) .......... Apache License 2.0
+  - zod ...................................... MIT License
+  - react, react-dom ......................... MIT License
+
+Realtime transport uses WebRTC (BSD 3-Clause License, with an additional patent
+grant) by way of livekit-client.

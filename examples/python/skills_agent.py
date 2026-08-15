@@ -7,11 +7,11 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 
-from cosmo_ai import CosmoRealtime
+from cosmo_ai import RealtimeClient
 
 
 async def main() -> None:
-    client = CosmoRealtime()
+    client = RealtimeClient()
     agent = client.agent(
         instructions="You are Alex at Acme.",
         skills=Path(__file__).parent / "skills",

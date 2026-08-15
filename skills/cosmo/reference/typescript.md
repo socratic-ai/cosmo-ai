@@ -12,7 +12,7 @@ import { RealtimeClient } from 'cosmo-ai';
 // file. A browser page instead gets { token: ... } — a minted JWT or a
 // TokenSource, never an API key.
 const client = new RealtimeClient({});
-const session = await client.agent({ instructions: 'You are terse.', voice: 'Upbeat' }).start();
+const session = await client.agent({ instructions: 'You are terse.', voice: 'Puck' }).start();
 
 for await (const event of session) {
   switch (event.type) {

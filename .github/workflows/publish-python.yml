@@ -1,0 +1,43 @@
+name: publish-python
+
+# Publishes python/ to PyPI when a python/vX.Y.Z release tag lands (the
+# monorepo exporter pushes the tag). OIDC trusted publishing: no tokens;
+# PEP 740 attestations are attached automatically by the publish action.
+
+on:
+  push:
+    tags: ['python/v[0-9]+.[0-9]+.[0-9]+*']
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    # GitHub-hosted runner required: OIDC identity is what PyPI trusts.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: pypi-publish
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Assert tag matches manifest version
+        run: |
+          set -euo pipefail
+          tag_version="${GITHUB_REF_NAME#python/v}"
+          manifest="$(python3 -c "import tomllib; print(tomllib.load(open('python/pyproject.toml','rb'))['project']['version'])")"
+          [ "$manifest" = "$tag_version" ] || {
+            echo "tag $GITHUB_REF_NAME != pyproject version $manifest"
+            exit 1
+          }
+
+      - uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+
+      - run: uv build
+        working-directory: python
+
+      - name: Publish to PyPI (trusted publishing)
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
+        with:
+          packages-dir: python/dist

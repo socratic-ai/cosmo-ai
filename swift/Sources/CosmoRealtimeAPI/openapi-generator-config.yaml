@@ -1,0 +1,7 @@
+generate:
+  - types
+  - client
+accessModifier: public
+# Idiomatic naming so generated Swift symbols read as Swift, not as
+# verbatim wire identifiers.
+namingStrategy: idiomatic

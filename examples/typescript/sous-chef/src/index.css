@@ -1,0 +1,771 @@
+:root {
+  --bg: #14100d;
+  --panel: rgb(28 21 16 / 0.58);
+  --line: rgb(255 255 255 / 0.14);
+  --ink: #fdf8f2;
+  --muted: rgb(253 248 242 / 0.62);
+  --accent: #ff9a5a;
+  --accent-ink: #2a1508;
+  --ok: #5fd08a;
+  --alert: #ff6b57;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* The app is phone-shaped wherever it runs: edge to edge on the device it is
+   meant for, and a centred column on a laptop rather than a stretched one. */
+.app {
+  position: relative;
+  height: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.panel {
+  background: var(--panel);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.34);
+}
+
+/* ── Start screen ─────────────────────────────────────────────────────── */
+
+.start {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  padding: calc(env(safe-area-inset-top) + 24px) 24px calc(env(safe-area-inset-bottom) + 24px);
+  background: radial-gradient(120% 70% at 50% 0%, #3a2618 0%, #1d1610 58%, #14100d 100%);
+}
+
+.start-face {
+  width: 132px;
+  margin-bottom: 4px;
+}
+
+.start-face svg {
+  width: 100%;
+  height: auto;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.start h1 {
+  margin: 0;
+  font-size: 44px;
+  letter-spacing: -0.03em;
+}
+
+.lede {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.55;
+  max-width: 34ch;
+}
+
+.err {
+  margin: 0;
+  color: var(--alert);
+  font-size: 15px;
+}
+
+.note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.btn {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 11px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--ink);
+  background: rgb(255 255 255 / 0.12);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+}
+
+.btn.primary {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--accent-ink);
+  padding: 17px 30px;
+  font-size: 18px;
+  box-shadow: 0 10px 28px rgb(255 154 90 / 0.32);
+}
+
+.btn.end {
+  background: rgb(253 248 242 / 0.92);
+  border-color: transparent;
+  color: #221a13;
+}
+
+.btn.unlock {
+  position: absolute;
+  left: 50%;
+  bottom: calc(env(safe-area-inset-bottom) + 108px);
+  transform: translateX(-50%);
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: transparent;
+  z-index: 5;
+  white-space: nowrap;
+}
+
+/* ── The frame ────────────────────────────────────────────────────────── */
+
+.stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #0d0a08;
+}
+
+.stage video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* No camera is not a black screen — the rest of the cook still works, so the
+   stage carries the same warmth the start screen does. */
+.stage--blind {
+  background: radial-gradient(115% 65% at 50% 4%, #55341c 0%, #2a1d14 52%, #14100d 100%);
+}
+
+/* Type sits on top of whatever the pan happens to look like, so the frame is
+   darkened at both ends where the words are. */
+.stage-scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgb(10 7 5 / 0.72) 0%, rgb(10 7 5 / 0.12) 26%, transparent 44%),
+    linear-gradient(transparent 40%, rgb(10 7 5 / 0.55) 68%, rgb(10 7 5 / 0.88) 100%);
+}
+
+.stage--looking::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px solid var(--accent);
+  box-shadow: inset 0 0 46px rgb(255 154 90 / 0.34);
+  animation: breathe 1.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ── The cook, over the frame ─────────────────────────────────────────── */
+
+.hud {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 12px);
+}
+
+.hud-top {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.hud-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.hud-bottom {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.status {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgb(20 15 11 / 0.55);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.pill .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+
+.pill.live .dot {
+  background: var(--ok);
+  box-shadow: 0 0 8px var(--ok);
+}
+
+.pill.bad .dot {
+  background: var(--alert);
+}
+
+.pill.warn {
+  background: var(--alert);
+  border-color: transparent;
+  color: #fff;
+}
+
+/* Reference, not the thing you cook from — one line, and a long dish name
+   truncates rather than taking a second one away from the pan. */
+.recipe-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  text-shadow: 0 2px 12px rgb(0 0 0 / 0.7);
+}
+
+.recipe-head h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recipe-meta {
+  flex: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+/* ── Timers ───────────────────────────────────────────────────────────── */
+
+.timer-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex: none;
+}
+
+.timer-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  background: rgb(20 15 11 / 0.55);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 13px;
+  max-width: 44vw;
+}
+
+.timer-label {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timer-clock {
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.timer-chip--fired {
+  background: var(--alert);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 700;
+  animation: shake 300ms 3;
+}
+
+/* ── The dock: the step, and what still has to go in ──────────────────── */
+
+/* One object across the foot of the screen rather than panels scattered over
+   the frame. It is capped so that a long step scrolls inside the dock instead
+   of growing over the pan. */
+.dock {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 46vh;
+  padding: 15px 16px;
+}
+
+.step {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.step::-webkit-scrollbar {
+  display: none;
+}
+
+.step--empty {
+  color: var(--muted);
+  font-size: 17px;
+  text-align: center;
+}
+
+.step--empty p {
+  margin: 0;
+}
+
+.step-text {
+  margin: 0;
+  font-size: 25px;
+  line-height: 1.28;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+.step-text--long {
+  font-size: 20px;
+  line-height: 1.32;
+}
+
+.step-cue,
+.step-next {
+  margin: 9px 0 0;
+  font-size: 13.5px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.step-cue {
+  color: var(--accent);
+}
+
+/* Flat along the bottom of the dock, bleeding to its edges: the count that
+   opens the full list, then the chips, scrolling sideways. Sixteen
+   ingredients is an ordinary list and an enormous panel. */
+.ingredient-row {
+  flex: none;
+  display: flex;
+  align-items: center;
+  margin: 13px -16px -15px;
+  padding: 10px 0 12px 16px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.ingredient-count {
+  flex: none;
+  padding: 5px 11px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ingredient-strip {
+  flex: 1;
+  min-width: 0;
+  list-style: none;
+  display: flex;
+  gap: 7px;
+  margin: 0;
+  padding: 0 16px 0 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* Fades whichever chip an edge cuts, so a half-word reads as "there is more
+     this way" rather than as clipped text. The left fade is exactly the
+     strip's own padding, so at rest it lands on empty space and the first
+     chip stays full strength. */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 10px,
+    #000 calc(100% - 26px),
+    transparent
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 10px,
+    #000 calc(100% - 26px),
+    transparent
+  );
+}
+
+.ingredient-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.ingredient-strip li {
+  flex: none;
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  white-space: nowrap;
+  transition:
+    opacity 180ms ease,
+    border-color 180ms ease;
+}
+
+.ingredient-strip .checked {
+  opacity: 0.4;
+  border-color: transparent;
+  text-decoration: line-through;
+  text-decoration-color: rgb(253 248 242 / 0.4);
+}
+
+.quantity {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.ingredient-strip .checked .quantity,
+.sheet-list .checked .quantity {
+  color: inherit;
+}
+
+/* ── The full list, on request ────────────────────────────────────────── */
+
+/* The one thing on this screen that opens on a tap: the whole checklist at
+   once, for the glance across the shelf that a sideways strip cannot give.
+   A tap anywhere off the sheet closes it. Portaled to the body, so it is
+   fixed to the viewport; the width cap keeps the sheet on the phone-shaped
+   column the rest of the app lives in. */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 12px;
+  background: rgb(10 7 5 / 0.55);
+}
+
+.sheet {
+  width: 100%;
+  max-width: 496px;
+  max-height: 72vh;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding: 16px;
+  animation: sheet-in 200ms ease-out;
+}
+
+.sheet-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sheet-head h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.sheet-count {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+}
+
+.sheet-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 14.5px;
+  line-height: 1.3;
+}
+
+.sheet-list .checked {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: rgb(253 248 242 / 0.4);
+}
+
+/* ── Controls and the chef ────────────────────────────────────────────── */
+
+.controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.avatar {
+  position: relative;
+  margin-right: auto;
+  border: none;
+  background: none;
+  padding: 0;
+  line-height: 0;
+}
+
+.avatar svg {
+  width: 62px;
+  height: auto;
+  filter: drop-shadow(0 3px 12px rgb(0 0 0 / 0.55));
+}
+
+.avatar-mouth {
+  transition: transform 80ms linear;
+}
+
+.avatar--listening .avatar-eyes {
+  animation: blink 3.4s infinite;
+}
+
+.avatar--looking .avatar-eyes {
+  transform: translateX(6px);
+}
+
+.avatar--looking .avatar-hat {
+  transform: rotate(-6deg);
+  transform-origin: 60px 40px;
+}
+
+.avatar--alert svg {
+  animation: shake 300ms 3;
+}
+
+/* What the chef is thinking, when you cannot hear it: the bubble is the only
+   sign of work happening between your question and the answer. */
+/* Anchored to the chef's left edge, not centred on it: the chef stands in the
+   corner, and a centred bubble runs off the side of the screen. */
+.bubble {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 6px);
+  z-index: 2;
+  background: var(--ink);
+  color: #221a13;
+  border-radius: 14px;
+  padding: 7px 13px;
+  font-size: 12.5px;
+  font-weight: 650;
+  line-height: 1.2;
+  white-space: nowrap;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 0.45);
+  animation: bubble-in 220ms ease-out;
+}
+
+.bubble::before,
+.bubble::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.bubble::before {
+  width: 8px;
+  height: 8px;
+  bottom: -5px;
+  left: 16px;
+}
+
+.bubble::after {
+  width: 4px;
+  height: 4px;
+  bottom: -12px;
+  left: 11px;
+}
+
+.bubble--alert,
+.bubble--alert::before,
+.bubble--alert::after {
+  background: var(--alert);
+}
+
+.bubble--alert {
+  color: #fff;
+}
+
+.bubble-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+
+.bubble-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #221a13;
+  animation: hop 1s ease-in-out infinite;
+}
+
+.bubble-dots i:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.bubble-dots i:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+/* ── Motion ───────────────────────────────────────────────────────────── */
+
+@keyframes blink {
+  0%,
+  94%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes shake {
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+@keyframes hop {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.94);
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatar--listening .avatar-eyes,
+  .avatar--alert svg,
+  .timer-chip--fired,
+  .stage--looking::after,
+  .bubble,
+  .bubble-dots i,
+  .sheet {
+    animation: none;
+  }
+}
+
+/* Short phones: the step and the frame keep their room, everything else gives
+   some up. */
+@media (max-height: 700px) {
+  .dock {
+    max-height: 42vh;
+    padding: 13px 14px;
+  }
+
+  .step-text {
+    font-size: 22px;
+  }
+
+  .step-text--long {
+    font-size: 18px;
+  }
+
+  .ingredient-row {
+    margin: 11px -14px -13px;
+    padding: 8px 0 10px 14px;
+  }
+
+  .avatar svg {
+    width: 52px;
+  }
+}

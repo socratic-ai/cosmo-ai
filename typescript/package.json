@@ -1,0 +1,89 @@
+{
+  "name": "cosmo-ai",
+  "version": "0.4.0",
+  "description": "Realtime SDK for voice and multimodal sessions backed by LiveKit and Cosmo — audio/video streaming, transcript events, tool calls, and React hooks.",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./*": {
+      "import": {
+        "types": "./dist/*.d.mts",
+        "default": "./dist/*.mjs"
+      },
+      "require": {
+        "types": "./dist/*.d.ts",
+        "default": "./dist/*.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "skills",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "THIRD-PARTY-LICENSES.md"
+  ],
+  "scripts": {
+    "build": "tsup && node scripts/source_hash.mjs > dist/source-hash",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist",
+    "prepack": "npm run build"
+  },
+  "keywords": [
+    "realtime",
+    "livekit",
+    "voice",
+    "audio",
+    "ai",
+    "cosmo"
+  ],
+  "author": "Socratic AI, Inc.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/socratic-ai/cosmo-ai",
+    "directory": "typescript"
+  },
+  "bugs": {
+    "url": "https://github.com/socratic-ai/cosmo-ai/issues"
+  },
+  "homepage": "https://askcosmo.ai",
+  "peerDependencies": {
+    "livekit-client": "^2",
+    "react": "^19",
+    "react-dom": "^19",
+    "zod": "^4.2.0"
+  },
+  "peerDependenciesMeta": {
+    "zod": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.0",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "jsdom": "^26.1.0",
+    "livekit-client": "^2.19.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "tsup": "^8",
+    "typescript": "^5",
+    "vitest": "^3",
+    "zod": "^4.4.3"
+  }
+}

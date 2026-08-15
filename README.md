@@ -4,17 +4,24 @@ Realtime voice and multimodal agent SDKs from [Socratic AI](https://askcosmo.ai)
 live sessions where an agent listens, speaks, calls tools, runs skills, and
 dials phones.
 
-This is the starting point for building on Cosmo. SDK source code lives in the
-per-language repositories below; this repository holds the runnable examples
-under [`examples/`](examples/).
+This is the home of the Cosmo SDKs: the TypeScript, Python, and Swift source,
+the runnable examples, and the agent skill all live here. Issues and
+contributions for any of them belong here too.
 
 ## SDKs
 
-| Language | Repository | Install |
+| Language | Source | Install |
 | --- | --- | --- |
-| TypeScript (web & React) | [cosmo-typescript-sdk](https://github.com/socratic-ai/cosmo-typescript-sdk) | `npm install cosmo-ai` |
-| Python | [cosmo-python-sdk](https://github.com/socratic-ai/cosmo-python-sdk) | `pip install cosmo-ai-sdk` |
-| Swift (macOS & iOS) | [cosmo-swift-sdk](https://github.com/socratic-ai/cosmo-swift-sdk) | Swift Package Manager |
+| TypeScript (web & React) | [`typescript/`](typescript/) | `npm install cosmo-ai` |
+| Python | [`python/`](python/) | `pip install cosmo-ai-sdk` |
+| Swift (macOS & iOS) | [`swift/`](swift/) | Swift Package Manager, via [cosmo-swift-sdk](https://github.com/socratic-ai/cosmo-swift-sdk) |
+
+Releases are tagged per SDK (`typescript/vX.Y.Z`, `python/vX.Y.Z`); npm and
+PyPI carry the released packages. Swift Package Manager needs a repository
+whose root is the package, so Swift releases are additionally published to
+[cosmo-swift-sdk](https://github.com/socratic-ai/cosmo-swift-sdk) — the same
+code as [`swift/`](swift/) here, re-rooted and tagged `X.Y.Z`. Use that
+repository URL in Xcode; file issues here.
 
 Documentation, quickstarts, and the changelog:
 [platform.askcosmo.ai/docs](https://platform.askcosmo.ai/docs).
@@ -46,17 +53,21 @@ Each example depends on the published SDK packages and states what it needs
 | [`examples/typescript/realtime-page`](examples/typescript/realtime-page) | A browser voice session on a plain web page |
 | [`examples/typescript/docs-agent`](examples/typescript/docs-agent) | A deployable docs-answering agent |
 | [`examples/typescript/squat-coach`](examples/typescript/squat-coach) | A voice coach grounded in video analysis done before the call, with a replay tool |
+| [`examples/typescript/garden-doctor`](examples/typescript/garden-doctor) | A phone-browser plant doctor on a live camera: server vision tools locate what you ask about and the agent draws boxes and points over the preview |
+| [`examples/typescript/chess-coach`](examples/typescript/chess-coach) | A voice chess coach over a live board: client tools move the pieces while the agent teaches |
+| [`examples/typescript/sous-chef`](examples/typescript/sous-chef) | A hands-free phone-browser cooking companion: `web_search` finds any recipe, background-tool timers let the agent speak up on its own, and it checks the pan with `examine_image` |
+| [`examples/typescript/model-router`](examples/typescript/model-router) | Routing free-text intent to a provider, tuning, and voice via a plain keyword table |
+| [`examples/typescript/party-game-night`](examples/typescript/party-game-night) | An AI game-show host on one TV: generative-UI client tools drive a sandboxed board, a skill carries the game, and hooks enforce the house rules |
 | [`examples/python`](examples/python) | Minimal session (`hello_realtime.py`), a terminal voice client (`voice_cli`), outbound calling, and hooks / skills / MCP agents |
 | [`examples/swift/HelloRealtime`](examples/swift/HelloRealtime) | Minimal macOS voice session, plus MCP, hooks, and skills variants |
 | [`examples/swift/Cartographer`](examples/swift/Cartographer) | A GUI macOS agent app |
 
 ## Issues and contributions
 
-SDK bugs go to the matching language repository above. Example fixes and new
-examples are welcome here as pull requests.
+Bugs and feature requests for any SDK or example belong on this repository's
+issue tracker. Example fixes and new examples are welcome as pull requests.
 
 ## License
 
 Licensed under the [Apache License, Version 2.0](LICENSE). Copyright 2026
-Socratic AI, Inc. The example code in this repository is provided under the same
-license; each example depends on the published Cosmo SDK packages.
+Socratic AI, Inc.

@@ -20,10 +20,7 @@ let sdkIsSibling = FileManager.default.fileExists(
 let sdkPackage = sdkIsSibling ? "CosmoAI" : "cosmo-swift-sdk"
 let sdkDependency: Package.Dependency = sdkIsSibling
     ? .package(name: "CosmoAI", path: "../../../swift")
-    : .package(
-        url: "https://github.com/socratic-ai/cosmo-swift-sdk",
-        .upToNextMinor(from: "0.4.0")
-    )
+    : .package(url: "https://github.com/socratic-ai/cosmo-swift-sdk", from: "0.5.0")
 
 let package = Package(
     name: "Cartographer",

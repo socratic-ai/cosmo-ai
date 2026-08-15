@@ -4,6 +4,9 @@
 DerivedData/
 node_modules/
 dist/
+# Examples track `latest` and pin nothing, so a lockfile only records the day
+# someone happened to install. Any npm command writes one; keep it untracked.
+package-lock.json
 *.tsbuildinfo
 __pycache__/
 *.py[cod]

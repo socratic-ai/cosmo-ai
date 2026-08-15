@@ -26,15 +26,15 @@ import sys
 from pathlib import Path
 
 from cosmo_ai import (
-    CosmoRealtime,
-    RealtimeError,
-    RealtimeModelText,
-    RealtimeReady,
-    RealtimeSessionEnded,
-    RealtimeToolInvocation,
-    RealtimeTranscriptDelta,
-    RealtimeTranscriptRole,
-    RealtimeTurnComplete,
+    RealtimeClient,
+    ErrorEvent,
+    ModelTextEvent,
+    ReadyEvent,
+    SessionEndedEvent,
+    ToolInvocationEvent,
+    TranscriptDeltaEvent,
+    TranscriptRole,
+    TurnCompleteEvent,
 )
 
 INSTRUCTIONS = (
@@ -54,29 +54,29 @@ async def run(prompt: str) -> None:
         print(f"  - {skill_md.parent.name}")
     print(f"\nPrompt: {prompt!r}\nConnecting to {base_url} ...\n")
 
-    client = CosmoRealtime()
+    client = RealtimeClient()
     agent = client.agent(instructions=INSTRUCTIONS, skills=skills_dir)
     async with agent.start() as session:
         await session.send_text(prompt)
         async for event in session:
-            if isinstance(event, RealtimeReady):
+            if isinstance(event, ReadyEvent):
                 print(f"[ready] session_id={event.session_id}")
-            elif isinstance(event, RealtimeToolInvocation):
+            elif isinstance(event, ToolInvocationEvent):
                 print(f"[tool-invocation] {event.name} {event.args}   <- skill picked")
-            elif isinstance(event, RealtimeModelText) and event.text:
+            elif isinstance(event, ModelTextEvent) and event.text:
                 print(f"[assistant-text] {event.text}", end="", flush=True)
-            elif isinstance(event, RealtimeTranscriptDelta) and event.is_final:
-                who = "user" if event.role == RealtimeTranscriptRole.USER else "assistant"
+            elif isinstance(event, TranscriptDeltaEvent) and event.is_final:
+                who = "user" if event.role == TranscriptRole.USER else "assistant"
                 print(f"[{who}] {event.text}")
-            elif isinstance(event, RealtimeError):
+            elif isinstance(event, ErrorEvent):
                 print(f"[error] {event.code}: {event.message} (fatal={event.fatal})")
                 if event.fatal:
                     break
-            elif isinstance(event, RealtimeTurnComplete):
-                if event.role == RealtimeTranscriptRole.ASSISTANT:
+            elif isinstance(event, TurnCompleteEvent):
+                if event.role == TranscriptRole.ASSISTANT:
                     print("\n[turn complete] ending.")
                     break
-            elif isinstance(event, RealtimeSessionEnded):
+            elif isinstance(event, SessionEndedEvent):
                 break
 
 

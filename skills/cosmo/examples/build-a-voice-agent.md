@@ -37,14 +37,14 @@ import sys
 from pydantic import BaseModel, Field
 
 from cosmo_ai import (
-    CosmoRealtime,
-    RealtimeError,
-    RealtimeReady,
+    RealtimeClient,
+    ErrorEvent,
+    ReadyEvent,
     RealtimeSession,
-    RealtimeSessionEnded,
-    RealtimeToolCall,
-    RealtimeTranscriptDelta,
-    RealtimeTranscriptRole,
+    SessionEndedEvent,
+    ToolCallEvent,
+    TranscriptDeltaEvent,
+    TranscriptRole,
     tool,
 )
 
@@ -63,29 +63,29 @@ async def lookup_order(input: OrderInput) -> dict[str, str]:
 
 async def drain(session: RealtimeSession) -> None:
     async for event in session:
-        if isinstance(event, RealtimeReady):
+        if isinstance(event, ReadyEvent):
             print(f"[ready] {session.session_id} — speak, or press Enter to end.")
             if event.rejected_tools:
                 print(f"[warn] rejected tools: {event.rejected_tools}", file=sys.stderr)
-        elif isinstance(event, RealtimeTranscriptDelta):
-            who = "agent" if event.role is RealtimeTranscriptRole.ASSISTANT else "you"
+        elif isinstance(event, TranscriptDeltaEvent):
+            who = "agent" if event.role is TranscriptRole.ASSISTANT else "you"
             print(f"  [{who}] {event.text}{'»' if event.is_final else '…'}")
-        elif isinstance(event, RealtimeToolCall):
+        elif isinstance(event, ToolCallEvent):
             print(f"  [tool] {event.name}")
-        elif isinstance(event, RealtimeError):
+        elif isinstance(event, ErrorEvent):
             # Non-fatal errors do not end the session — log and keep iterating.
             level = "fatal" if event.fatal else "error"
             print(f"  [{level}] {event.code.value}: {event.message}", file=sys.stderr)
-        elif isinstance(event, RealtimeSessionEnded):
+        elif isinstance(event, SessionEndedEvent):
             print(f"  [ended] {event.reason}")
 
 
 async def main() -> None:
     # Resolves COSMO_API_KEY, else the `cosmo login` credentials file.
-    async with CosmoRealtime() as client:
+    async with RealtimeClient() as client:
         agent = client.agent(
             instructions="You are a concise order-support agent. Use lookup_order for status questions.",
-            voice="Upbeat",
+            voice="Puck",
             tools=[lookup_order],
         )
         async with agent.start() as session:
@@ -121,7 +121,7 @@ COSMO_API_KEY=cosmo_... python agent.py
 | `CredentialsNotFoundError` on construction | no `COSMO_API_KEY` and no stored login — run `cosmo login` (step 1) |
 | Session starts, agent never hears you | mic not enabled, or OS mic permission not granted |
 | `agent.start()` rejected | key missing the `realtime:use` scope (`verify()` shows `can_start_sessions` false), or a key issued for a different Cosmo backend (`401` — check `COSMO_BASE_URL`) |
-| Tool never called | check `RealtimeReady.rejected_tools`; a declared tool with no handler is rejected |
+| Tool never called | check `ReadyEvent.rejected_tools`; a declared tool with no handler is rejected |
 
 ## If they want this in a browser
 

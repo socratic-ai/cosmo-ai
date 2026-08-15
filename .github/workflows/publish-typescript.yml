@@ -1,0 +1,55 @@
+name: publish-typescript
+
+# Publishes typescript/ to npm when a typescript/vX.Y.Z release tag lands
+# (the monorepo exporter pushes the tag). OIDC trusted publishing: no
+# tokens; the provenance badge is attached automatically. The agent skill
+# ships inside the npm package, so it is copied from the repo root into
+# the package before packing.
+
+on:
+  push:
+    tags: ['typescript/v[0-9]+.[0-9]+.[0-9]+*']
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    # GitHub-hosted runner required: OIDC identity is what npm trusts.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: npm-publish
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: npm >= 11.5.1 for trusted publishing
+        run: npm install -g npm@latest
+
+      - name: Assert tag matches manifest version
+        run: |
+          set -euo pipefail
+          tag_version="${GITHUB_REF_NAME#typescript/v}"
+          manifest="$(node -p "require('./typescript/package.json').version")"
+          [ "$manifest" = "$tag_version" ] || {
+            echo "tag $GITHUB_REF_NAME != package.json version $manifest"
+            exit 1
+          }
+
+      - name: Bundle the agent skill into the package
+        run: cp -R skills typescript/skills
+
+      - run: npm ci
+        working-directory: typescript
+
+      - run: npm run build
+        working-directory: typescript
+
+      - name: Publish to npm (trusted publishing)
+        run: npm publish
+        working-directory: typescript

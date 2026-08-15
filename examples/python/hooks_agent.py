@@ -13,7 +13,7 @@ import asyncio
 
 import structlog
 
-from cosmo_ai import CosmoRealtime, hooks
+from cosmo_ai import RealtimeClient, hooks
 from cosmo_ai.hooks import (
     PostToolUseContext,
     PreToolUseContext,
@@ -47,7 +47,7 @@ def on_session_end(ctx: SessionEndContext) -> None:
 
 
 async def main() -> None:
-    client = CosmoRealtime()
+    client = RealtimeClient()
     agent = client.agent(
         instructions="You are Alex.",
         hooks=[add_context, block_deletes, log_outcome, on_session_end],

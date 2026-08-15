@@ -21,12 +21,12 @@ import asyncio
 import os
 
 from cosmo_ai import (
-    CosmoRealtime,
+    RealtimeClient,
     DialError,
-    RealtimeError,
-    RealtimeReady,
-    RealtimeSessionEnded,
-    RealtimeTranscriptDelta,
+    ErrorEvent,
+    ReadyEvent,
+    SessionEndedEvent,
+    TranscriptDeltaEvent,
 )
 
 
@@ -35,7 +35,7 @@ async def main() -> None:
     if not phone_number:
         raise SystemExit("Set COSMO_DIAL_TO to an E.164 number, e.g. +14155550199.")
 
-    async with CosmoRealtime() as client:
+    async with RealtimeClient() as client:
         agent = client.agent(
             instructions=(
                 "You are calling on behalf of Acme to confirm an appointment. "
@@ -52,14 +52,14 @@ async def main() -> None:
             print(f"Dial queued: {dial.dial_id}")
 
             async for event in session:
-                if isinstance(event, RealtimeReady):
+                if isinstance(event, ReadyEvent):
                     print(f"[ready] session_id={event.session_id}")
-                elif isinstance(event, RealtimeTranscriptDelta):
+                elif isinstance(event, TranscriptDeltaEvent):
                     marker = "»" if event.is_final else "…"
                     print(f"  [{event.role.value}] {event.text}{marker}")
-                elif isinstance(event, RealtimeError):
+                elif isinstance(event, ErrorEvent):
                     print(f"  [error] {event.code.value}: {event.message}")
-                elif isinstance(event, RealtimeSessionEnded):
+                elif isinstance(event, SessionEndedEvent):
                     print(f"  [ended] {event.reason}")
 
 

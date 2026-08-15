@@ -1,0 +1,29 @@
+{
+  "name": "cosmo-sous-chef",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
+    "smoke": "tsx scripts/smoke.ts",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "cosmo-ai": "latest",
+    "livekit-client": "^2",
+    "react": "^19",
+    "react-dom": "^19",
+    "zod": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4",
+    "tsx": "^4",
+    "typescript": "^5",
+    "vite": "^6"
+  }
+}

@@ -1,8 +1,8 @@
 import CosmoRealtime
 import Foundation
 
-// A headless live proof of the Agent + MCP loop: connect a local stdio MCP
-// server, open a real session through the Agent, send a user turn as text,
+// A headless live proof of the RealtimeAgent + MCP loop: connect a local stdio MCP
+// server, open a real session through the RealtimeAgent, send a user turn as text,
 // and watch the model call one of the server's `mcp__<server>__<tool>` tools
 // and act on the result.
 //
@@ -25,7 +25,7 @@ guard FileManager.default.fileExists(atPath: configURL.path) else {
 
 print("== loading MCP servers from \(configURL.path) ==")
 let registry = try McpRegistry.fromConfigFile(configURL)
-let agent = try Agent(mcp: registry)
+let agent = try RealtimeAgent(mcp: registry)
 
 let options = try RealtimeSession.Options()
 let config = SessionConfig(
@@ -37,7 +37,7 @@ let session = try await agent.start(options, config: config, micMuted: true)
 var sawMcpCall = false
 let pump = Task {
     do {
-        for try await event in session.session.events {
+        for try await event in session.events {
             switch event {
             case .ready:
                 print("● READY — session live")
@@ -70,7 +70,7 @@ let pump = Task {
 // Let the agent come up before the first turn (sending instantly races ready).
 try await Task.sleep(nanoseconds: 2_500_000_000)
 print("\n> user: \(prompt)\n")
-try await session.session.send(text: prompt)
+try await session.send(text: prompt)
 
 try await Task.sleep(nanoseconds: 15_000_000_000)
 print("\nending session…")

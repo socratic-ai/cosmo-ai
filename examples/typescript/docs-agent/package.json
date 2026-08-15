@@ -14,7 +14,7 @@
     "pages:deploy": "npm run pages:build && wrangler pages deploy"
   },
   "dependencies": {
-    "cosmo-ai": "^0.3.0",
+    "cosmo-ai": "latest",
     "dotenv": "^17",
     "express": "^5",
     "livekit-client": "^2",

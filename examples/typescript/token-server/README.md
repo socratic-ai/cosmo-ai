@@ -28,7 +28,7 @@ const client = new RealtimeClient({
 
 ```python
 # Python
-client = CosmoRealtime(token=TokenSource.endpoint(
+client = RealtimeClient(token=TokenSource.endpoint(
     "https://your-deploy.example.com/token",
     headers={"Authorization": f"Bearer {MINT_SECRET}", "X-External-User-Id": user_id},
 ))

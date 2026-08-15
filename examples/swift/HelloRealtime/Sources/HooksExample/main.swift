@@ -93,7 +93,7 @@ let hooks: [Hook] = [
 
 // MARK: - Session
 
-let agent = try Agent(tools: [getBalanceTool, deleteAccountTool], hooks: hooks)
+let agent = try RealtimeAgent(tools: [getBalanceTool, deleteAccountTool], hooks: hooks)
 
 let options = try RealtimeSession.Options()
 let config = SessionConfig(instructions: "You are a concise bank phone-support agent. Keep replies short.")
@@ -103,7 +103,7 @@ let session = try await agent.start(options, config: config, micMuted: true)
 
 let pump = Task {
     do {
-        for try await event in session.session.events {
+        for try await event in session.events {
             switch event {
             case .ready:
                 print("● READY — session live")
@@ -144,11 +144,11 @@ if await readyFlag.get() {
 }
 
 print("\n> user: \(prompt1)\n")
-try await session.session.send(text: prompt1)
+try await session.send(text: prompt1)
 
 try await Task.sleep(nanoseconds: 14_000_000_000)
 print("\n> user: \(prompt2)\n")
-try await session.session.send(text: prompt2)
+try await session.send(text: prompt2)
 
 try await Task.sleep(nanoseconds: 14_000_000_000)
 print("\nending…")
