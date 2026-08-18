@@ -502,9 +502,9 @@ class GeminiModelOptions(BaseModel):
     ``turn_detection`` selects which detector ends the user's turn, and each
     detector owns its knobs: ``end_of_speech_sensitivity``,
     ``silence_duration_ms`` and ``prefix_padding_ms`` tune the provider's
-    ``server_vad``; the ``cosmo_vad`` block tunes ``cosmo_vad`` (the Gemini
-    default). Naming a detector and sending the other one's knobs is
-    rejected at session start."""
+    ``server_vad``; the ``cosmo_vad`` block tunes ``cosmo_vad``. Naming a
+    detector and sending the other one's knobs is rejected at session
+    start."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -516,13 +516,13 @@ class GeminiModelOptions(BaseModel):
     """Whether the model streams thought summaries alongside its answer. Only
     worth enabling for an app that reads them."""
     turn_detection: TurnDetectionMode | None = None
-    """Which end-of-turn detector runs. ``None`` (the default) and
-    ``cosmo_vad`` run Cosmo's semantic turn detection, which classifies
-    whether the utterance reads as finished instead of timing a silence
-    window. ``server_vad`` opts the session into the provider's
-    silence-window detection, which the three knobs below tune; they are
-    unread under the default detector. ``semantic_vad`` is OpenAI-only and
-    rejected."""
+    """Which end-of-turn detector runs. ``cosmo_vad`` opts the session into
+    Cosmo's semantic turn detection, which classifies whether the utterance
+    reads as finished instead of timing a silence window. ``server_vad``
+    pins the provider's silence-window detection, which the three knobs
+    below tune; they are unread under ``cosmo_vad``. ``None`` keeps the
+    server default (currently ``server_vad``). ``semantic_vad`` is
+    OpenAI-only and rejected."""
     end_of_speech_sensitivity: EndOfSpeechSensitivity | None = None
     """How readily the model decides the user's turn ended. ``high`` endpoints
     sooner, so the assistant answers faster but is more likely to cut in on a
@@ -534,9 +534,8 @@ class GeminiModelOptions(BaseModel):
     """Audio, in milliseconds, kept from before speech was detected. Read
     only with ``server_vad``."""
     cosmo_vad: CosmoVadConfig | None = None
-    """Tuning for the ``cosmo_vad`` detector. Valid only while that detector
-    runs (``turn_detection`` unset or ``cosmo_vad``); rejected alongside
-    ``server_vad``."""
+    """Tuning for the ``cosmo_vad`` detector. Sending it alongside
+    ``server_vad`` is rejected. ``None`` keeps the server defaults."""
 
 
 class OpenAIModelOptions(BaseModel):

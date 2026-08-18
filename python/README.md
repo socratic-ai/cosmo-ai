@@ -21,7 +21,7 @@ pip install cosmo-ai-sdk
 > [changelog](https://platform.askcosmo.ai/docs/meta/changelog). We will tag 1.0 once the session
 > event stream, tool authoring, and credential APIs have gone a full release
 > cycle without breaking changes. Pin a minor version (e.g.
-> `cosmo-ai-sdk~=0.4.0`) if you need stability.
+> `cosmo-ai-sdk~=0.5.0`) if you need stability.
 
 Requires Python 3.10+. One install covers everything: the media transport
 (`livekit>=1.1.12`), microphone capture via `set_microphone_enabled`, and

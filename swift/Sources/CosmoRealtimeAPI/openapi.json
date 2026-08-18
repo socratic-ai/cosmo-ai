@@ -704,7 +704,7 @@
       },
       "GeminiModelOptions": {
         "additionalProperties": false,
-        "description": "Gemini-realtime model knobs. Valid only when the selected ``model`` runs\non Gemini; the ``provider`` discriminator makes setting these for any other\nprovider a schema error rather than a silent no-op.\n\n``turn_detection`` selects which detector ends the user's turn, and each\ndetector owns its knobs: ``end_of_speech_sensitivity``,\n``silence_duration_ms`` and ``prefix_padding_ms`` tune the provider's\n``server_vad``; the ``cosmo_vad`` block tunes ``cosmo_vad`` (the Gemini\ndefault). Naming a detector and sending the other one's knobs is rejected\nat session start rather than silently ignored.",
+        "description": "Gemini-realtime model knobs. Valid only when the selected ``model`` runs\non Gemini; the ``provider`` discriminator makes setting these for any other\nprovider a schema error rather than a silent no-op.\n\n``turn_detection`` selects which detector ends the user's turn, and each\ndetector owns its knobs: ``end_of_speech_sensitivity``,\n``silence_duration_ms`` and ``prefix_padding_ms`` tune the provider's\n``server_vad``; the ``cosmo_vad`` block tunes ``cosmo_vad``. Naming a\ndetector and sending the other one's knobs is rejected at session start\nrather than silently ignored.",
         "properties": {
           "cosmo_vad": {
             "$ref": "#/components/schemas/CosmoVadConfig"
@@ -2038,7 +2038,7 @@
         "type": "object"
       },
       "TurnDetectionMode": {
-        "description": "Which turn detector ends the user's turn.\n\n``server_vad`` ends the turn on a fixed silence window;\n``semantic_vad`` runs OpenAI's classifier that ends it as soon as the\nutterance reads as complete (OpenAI-only); ``cosmo_vad`` runs Cosmo's own\nsemantic detector in the realtime worker (Gemini-only). ``None`` keeps\nthe provider default: ``server_vad`` on OpenAI, ``cosmo_vad`` on\nGemini.",
+        "description": "Which turn detector ends the user's turn.\n\n``server_vad`` ends the turn on a fixed silence window;\n``semantic_vad`` runs OpenAI's classifier that ends it as soon as the\nutterance reads as complete (OpenAI-only); ``cosmo_vad`` runs Cosmo's own\nsemantic detector in the realtime worker (Gemini-only). ``None`` keeps\nthe server default (currently ``server_vad`` on both providers).",
         "enum": [
           "server_vad",
           "semantic_vad",

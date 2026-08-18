@@ -39,7 +39,7 @@ public actor RealtimeSession {
 
     /// Package version, sent as the SDK identity on every Cosmo REST call
     /// and on the ``session-config`` start payload.
-    public static let sdkVersion = "0.5.0"
+    public static let sdkVersion = "0.6.0"
 
     /// The ``X-Cosmo-SDK`` header value carried on every Cosmo REST call.
     static let sdkIdentityHeaderValue = "\(sdkName)/\(sdkVersion)"

@@ -23,6 +23,7 @@ export type {
   ExamineImageToolSpec,
   CosmoVadConfig,
   GeminiModelOptions,
+  GrokModelOptions,
   ModelOptions,
   OpenAIMiniModelOptions,
   OpenAIModelOptions,
@@ -126,9 +127,13 @@ export type { Skill } from './core/skills';
 
 export type {
   EndCall as EndCall,
+  EndOfSpeechSensitivity,
+  InterruptionSensitivity,
   Say as Say,
+  SemanticEagerness,
   SessionStartTimings,
   SilenceTimeout as SilenceTimeout,
+  ThinkingLevel,
 } from './wire/types.gen';
 
 export type { SessionConnectTimings } from './core/state';

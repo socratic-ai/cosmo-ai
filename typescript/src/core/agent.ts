@@ -233,6 +233,12 @@ export type OpenAIMiniModelOptions = {
   provider: 'openai_mini';
 };
 
+/** xAI Grok Voice model knobs — untunable today, like the OpenAI mini
+ *  tier. */
+export type GrokModelOptions = {
+  provider: 'grok';
+};
+
 /** Provider-scoped model knobs, discriminated on ``provider``. Each knob is
  *  honored only by its provider — ``thinkingLevel`` lives only on the Gemini
  *  block — so an illegal pairing is a type error. ``model`` selects the
@@ -240,7 +246,8 @@ export type OpenAIMiniModelOptions = {
 export type ModelOptions =
   | GeminiModelOptions
   | OpenAIModelOptions
-  | OpenAIMiniModelOptions;
+  | OpenAIMiniModelOptions
+  | GrokModelOptions;
 
 /** How the agent sounds — the prebuilt voice and the per-run speaking
  *  style. Accepted anywhere a plain voice-id string is, when a speaking
@@ -506,6 +513,8 @@ function toWireModelOptions(
       };
     case 'openai_mini':
       return { provider: 'openai_mini' };
+    case 'grok':
+      return { provider: 'grok' };
   }
 }
 

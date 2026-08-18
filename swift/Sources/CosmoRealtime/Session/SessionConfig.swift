@@ -250,11 +250,11 @@ public struct SessionConfig: Sendable, Equatable {
     public typealias TurnDetectionMode =
         CosmoRealtimeAPI.Components.Schemas.TurnDetectionMode
 
-    /// Which turn detector ends the user's turn on Gemini. ``cosmoVad`` is
-    /// Cosmo's own semantic detector, also the default when ``turnDetection``
-    /// is ``nil`` — a pause triggers one end-of-turn inference, so a
-    /// mid-thought pause holds the turn open. ``serverVad`` opts the session
-    /// into the provider's fixed silence window. Each detector owns its
+    /// Which turn detector ends the user's turn on Gemini. ``cosmoVad`` opts
+    /// the session into Cosmo's own semantic detector — a pause triggers one
+    /// end-of-turn inference, so a mid-thought pause holds the turn open.
+    /// ``serverVad`` pins the provider's fixed silence window. ``nil`` keeps
+    /// the server default (currently ``serverVad``). Each detector owns its
     /// knobs: ``endOfSpeechSensitivity``, ``silenceDurationMs`` and
     /// ``prefixPaddingMs`` tune ``serverVad`` and the server rejects them
     /// alongside ``cosmoVad``, whose own knobs ride the case.
@@ -295,14 +295,14 @@ public struct SessionConfig: Sendable, Equatable {
     /// ``SessionConfig`` selects the concrete model within the chosen provider.
     public enum ModelOptions: Sendable, Equatable {
         /// Gemini-realtime knobs. ``turnDetection`` selects the end-of-turn
-        /// detector: ``nil`` (the default) and ``.cosmoVad`` are Cosmo's
-        /// semantic turn detection, which classifies whether the utterance
-        /// reads as finished instead of timing a silence window;
-        /// ``.serverVad`` opts the session into the provider's
-        /// silence-window detection, which is what
+        /// detector: ``.cosmoVad`` opts the session into Cosmo's semantic
+        /// turn detection, which classifies whether the utterance reads as
+        /// finished instead of timing a silence window; ``.serverVad`` pins
+        /// the provider's silence-window detection, which is what
         /// ``endOfSpeechSensitivity``, ``silenceDurationMs`` and
-        /// ``prefixPaddingMs`` tune (they are unread under the default
-        /// detector).
+        /// ``prefixPaddingMs`` tune (they are read only under
+        /// ``.serverVad``). ``nil`` keeps the server default (currently
+        /// ``.serverVad``).
         case gemini(
             temperature: Double? = nil,
             maxOutputTokens: Int? = nil,

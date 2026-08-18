@@ -28,7 +28,7 @@ it; file issues on cosmo-ai.
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/socratic-ai/cosmo-swift-sdk", from: "0.5.0"),
+    .package(url: "https://github.com/socratic-ai/cosmo-swift-sdk", from: "0.6.0"),
 ],
 targets: [
     .target(

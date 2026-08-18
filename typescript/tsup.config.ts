@@ -27,7 +27,6 @@ export default defineConfig({
     'tool/screen': 'src/tool/screen.ts',
     'tool/video_geometry': 'src/tool/video_geometry.ts',
     'tool/zod': 'src/tool/zod.ts',
-    'wire/types.gen': 'src/wire/types.gen.ts',
     'desktop/local_desktop_preset_union.gen':
       'src/desktop/local_desktop_preset_union.gen.ts',
   },

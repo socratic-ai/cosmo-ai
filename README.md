@@ -1,12 +1,137 @@
-# Cosmo AI
+<h1 align="center">Cosmo AI</h1>
 
-Realtime voice and multimodal agent SDKs from [Socratic AI](https://askcosmo.ai):
-live sessions where an agent listens, speaks, calls tools, runs skills, and
-dials phones.
+<p align="center"><b>Build realtime agents that see, hear, speak — and keep getting better.</b></p>
 
-This is the home of the Cosmo SDKs: the TypeScript, Python, and Swift source,
-the runnable examples, and the agent skill all live here. Issues and
-contributions for any of them belong here too.
+<p align="center">
+  <a href="https://askcosmo.ai">askcosmo.ai</a> ·
+  <a href="https://platform.askcosmo.ai/docs">Documentation</a> ·
+  <a href="https://platform.askcosmo.ai/docs/meta/changelog">Changelog</a>
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/cosmo-ai"><img src="https://img.shields.io/npm/v/cosmo-ai" alt="npm" /></a>
+  <a href="https://pypi.org/project/cosmo-ai-sdk/"><img src="https://img.shields.io/pypi/v/cosmo-ai-sdk" alt="PyPI" /></a>
+  <a href="https://github.com/socratic-ai/cosmo-swift-sdk"><img src="https://img.shields.io/badge/swift-SwiftPM-orange" alt="SwiftPM" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue" alt="License" /></a>
+</p>
+
+Cosmo is one SDK for voice and multimodal agents on every surface —
+browser, iOS/macOS, phone lines, and headless servers. You define the
+agent's persona, tools, skills, and guardrails; the Cosmo harness handles
+the transport, the model inference, and the improvement loop underneath a
+stable API.
+
+This repository is the home of the Cosmo SDK family:
+
+- [`typescript/`](typescript/) — [`cosmo-ai`](https://www.npmjs.com/package/cosmo-ai) on npm, for web and React
+- [`python/`](python/) — [`cosmo-ai-sdk`](https://pypi.org/project/cosmo-ai-sdk/) on PyPI, asyncio end to end
+- [`swift/`](swift/) — `CosmoRealtime` for macOS and iOS, installed via [cosmo-swift-sdk](https://github.com/socratic-ai/cosmo-swift-sdk)
+- [`examples/`](examples/) — runnable examples for all three SDKs
+- [`skills/`](skills/) — the [Agent Skill](https://agentskills.io) that teaches coding agents this SDK
+
+Issues and contributions for any of them belong here.
+
+## Quickstart
+
+### TypeScript
+
+```bash
+npm install cosmo-ai
+```
+
+```ts
+import { RealtimeClient } from 'cosmo-ai';
+
+const client = new RealtimeClient({ token: '<minted-end-user-token>' });
+
+const agent = client.agent({
+  instructions: 'You are a terse assistant.',
+  voice: 'Puck',
+});
+
+const session = await agent.start();
+
+for await (const event of session) {
+  switch (event.type) {
+    case 'ready':
+      console.log(`ready — session ${event.session_id}`);
+      break;
+    case 'transcript':
+      console.log(`[${event.role}] ${event.text}`);
+      break;
+    case 'session-ended':
+      console.log(`ended: ${event.reason}`);
+      break;
+  }
+}
+```
+
+### Python
+
+```bash
+pip install cosmo-ai-sdk
+```
+
+```python
+import asyncio
+from cosmo_ai import (
+    RealtimeClient,
+    ReadyEvent,
+    SessionEndedEvent,
+    TranscriptDeltaEvent,
+    TranscriptRole,
+)
+
+async def main() -> None:
+    client = RealtimeClient(api_key="cosmo_...")
+    agent = client.agent(
+        instructions="You are a terse assistant.",
+        voice="Puck",
+    )
+    async with agent.start() as session:
+        await session.send_text("Hello!")
+        async for event in session:
+            match event:
+                case ReadyEvent():
+                    print(f"ready — session {event.session_id}")
+                case TranscriptDeltaEvent(is_final=True):
+                    who = "agent" if event.role is TranscriptRole.ASSISTANT else "you"
+                    print(f"[{who}] {event.text}")
+                case SessionEndedEvent():
+                    print(f"ended: {event.reason}")
+                    break
+
+asyncio.run(main())
+```
+
+### Swift
+
+Add [cosmo-swift-sdk](https://github.com/socratic-ai/cosmo-swift-sdk) as a
+Swift Package Manager dependency and import `CosmoRealtime` — see
+[`swift/README.md`](swift/README.md) for the full quickstart. Requires
+macOS 13+ / iOS 16+ and Swift 5.9+.
+
+Each quickstart continues in its SDK's README and in the
+[documentation](https://platform.askcosmo.ai/docs).
+
+## Everything a live agent needs
+
+| Capability | What you get |
+| --- | --- |
+| **Full-duplex voice** | The agent listens while it speaks — users barge in mid-sentence, and per-provider turn-taking options tune how eagerly it yields. |
+| **Camera + screen vision** | Sessions take live camera and screen input; server vision tools (`examine_image`, `detect_objects`, `point_at_object`) inspect frames on demand. |
+| **Skills** | Package procedures as modular skills the agent loads per turn — capability scales without inflating the system prompt. |
+| **Hook guardrails** | `PreToolUse` / `PostToolUse` seams validate or rewrite tool arguments, scrub sensitive data, and deny calls with a reason. |
+| **Client and server tools** | Typed client tools run your handlers (foreground or background); server tools opt in with one line — `web_search`, `end_call`, and the vision tools — zero config. |
+| **Audit trail** | Every tool call resolves to a typed outcome — `ok`, `error`, or `denied` — surfaced on the event stream. |
+| **Typed events** | A session is a stream of typed events — transcripts, tool calls, usage, lifecycle — discriminated unions in TypeScript, typed classes in Python and Swift. |
+| **Telephony** | Dial a phone callee into any session (E.164) and run outbound calls. |
+| **Resilient sessions** | Network drops heal in place — sessions resume without losing the run. |
+| **Model choice** | OpenAI Realtime, Gemini Live, and Grok Voice behind one API — swap providers with a config field, not an app rewrite. |
+
+The same agent definition runs on every surface: a web page, a native app,
+a phone call, or a server process — capabilities toggle in config while the
+session API stays the same.
 
 ## SDKs
 
@@ -62,10 +187,24 @@ Each example depends on the published SDK packages and states what it needs
 | [`examples/swift/HelloRealtime`](examples/swift/HelloRealtime) | Minimal macOS voice session, plus MCP, hooks, and skills variants |
 | [`examples/swift/Cartographer`](examples/swift/Cartographer) | A GUI macOS agent app |
 
-## Issues and contributions
+## Repository layout
 
-Bugs and feature requests for any SDK or example belong on this repository's
-issue tracker. Example fixes and new examples are welcome as pull requests.
+```
+cosmo-ai/
+├── typescript/   # cosmo-ai (npm) — web & React SDK
+├── python/       # cosmo-ai-sdk (PyPI) — asyncio SDK
+├── swift/        # CosmoRealtime — Swift SDK (macOS & iOS)
+├── examples/     # runnable examples for all three SDKs
+└── skills/       # the Agent Skill for coding agents
+```
+
+## Support
+
+- [Documentation](https://platform.askcosmo.ai/docs) — getting started, the
+  credential model, per-language reference, and the changelog
+- [GitHub issues](https://github.com/socratic-ai/cosmo-ai/issues) — bugs and
+  feature requests for any SDK or example
+- Example fixes and new examples are welcome as pull requests
 
 ## License
 
