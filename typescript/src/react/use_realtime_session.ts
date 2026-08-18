@@ -7,7 +7,7 @@
  * The imperative surface (``new RealtimeClient(...)``, ``client.agent(...)
  * .start()``, ``session.end()``) stays the source of truth; this hook is
  * sugar over it for the browser-app shape every example shares, the same
- * way ``CosmoRealtimeProvider`` is sugar for reads. It owns the pieces an
+ * way ``RealtimeProvider`` is sugar for reads. It owns the pieces an
  * app otherwise hand-rolls:
  *
  * - single-use-client semantics: a fresh ``RealtimeClient`` per run, and on

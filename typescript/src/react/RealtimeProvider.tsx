@@ -28,10 +28,10 @@ import { reduceTranscript, type RealtimeTranscriptItem } from '../core/transcrip
  *
  * Two configurations are supported:
  *
- *  - ``<CosmoRealtimeProvider client={myClient}>`` — host supplies a
+ *  - ``<RealtimeProvider client={myClient}>`` — host supplies a
  *    constructed ``RealtimeClient``. Lifecycle is the host's; the
  *    provider does NOT disconnect on unmount.
- *  - ``<CosmoRealtimeProvider getAuthHeaders={…}>`` — provider constructs the
+ *  - ``<RealtimeProvider getAuthHeaders={…}>`` — provider constructs the
  *    underlying ``RealtimeClient`` and owns its lifecycle; ``disconnect()``
  *    runs on unmount or when a construction prop changes.
  *
@@ -100,7 +100,7 @@ export type RealtimeContextValue = {
 };
 
 /** Default maximum number of transcript bubbles kept in the React
- *  snapshot. Configurable via ``CosmoRealtimeProvider``'s
+ *  snapshot. Configurable via ``RealtimeProvider``'s
  *  ``maxTranscriptLength`` prop — pass ``Infinity`` (or a large
  *  number) to keep unbounded transcript history. The default trades
  *  full history for bounded memory in long sessions; the SDK never
@@ -127,7 +127,7 @@ function snapshotFromClient(client: RealtimeClientLike): RealtimeSnapshotState {
 
 const RealtimeContext = createContext<RealtimeContextValue | null>(null);
 
-export type CosmoRealtimeProviderProps = {
+export type RealtimeProviderProps = {
   children: ReactNode;
   /** Pre-constructed client. Lifecycle is the caller's responsibility —
    *  the provider does not call ``disconnect()`` on unmount. Takes
@@ -150,13 +150,13 @@ export type CosmoRealtimeProviderProps = {
   maxTranscriptLength?: number;
 };
 
-export function CosmoRealtimeProvider({
+export function RealtimeProvider({
   children,
   client,
   getAuthHeaders,
   transportFactory,
   maxTranscriptLength = DEFAULT_MAX_TRANSCRIPT_LEN,
-}: CosmoRealtimeProviderProps) {
+}: RealtimeProviderProps) {
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
 
   const { client: resolvedClient, ownedByProvider } = useMemo<{
@@ -271,7 +271,7 @@ function useRealtimeContext(): RealtimeContextValue {
   const ctx = useContext(RealtimeContext);
   if (!ctx) {
     throw new Error(
-      'Cosmo realtime hooks and components must be used inside <CosmoRealtimeProvider>.',
+      'Cosmo realtime hooks and components must be used inside <RealtimeProvider>.',
     );
   }
   return ctx;
@@ -292,3 +292,11 @@ export function useRealtimeSnapshot(): RealtimeSnapshotState {
 export function useRealtimeAudioElementRef(): MutableRefObject<HTMLAudioElement | null> {
   return useRealtimeContext().audioElementRef;
 }
+
+/** @deprecated Renamed to ``RealtimeProvider``. This alias keeps working
+ *  and will be removed in a future release. */
+export const CosmoRealtimeProvider = RealtimeProvider;
+
+/** @deprecated Renamed to ``RealtimeProviderProps``. This alias keeps
+ *  working and will be removed in a future release. */
+export type CosmoRealtimeProviderProps = RealtimeProviderProps;

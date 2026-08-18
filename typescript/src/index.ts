@@ -168,8 +168,13 @@ export type {
   SessionUsage,
 } from './core/usage';
 
-export { CosmoRealtimeProvider, useRealtimeClient } from './react/RealtimeProvider';
+export {
+  RealtimeProvider,
+  CosmoRealtimeProvider,
+  useRealtimeClient,
+} from './react/RealtimeProvider';
 export type {
+  RealtimeProviderProps,
   CosmoRealtimeProviderProps,
   RealtimeClientLike,
   RealtimeSnapshotState,

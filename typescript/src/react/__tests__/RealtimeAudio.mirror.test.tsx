@@ -4,7 +4,7 @@ import { render } from '@testing-library/react';
 import { useEffect, type MutableRefObject } from 'react';
 
 import type { RealtimeClient } from '../../core/realtime_client';
-import { CosmoRealtimeProvider, useRealtimeAudioElementRef } from '../RealtimeProvider';
+import { RealtimeProvider, useRealtimeAudioElementRef } from '../RealtimeProvider';
 import { RealtimeAudio } from '../components/RealtimeAudio';
 
 function fakeClient(): RealtimeClient {
@@ -40,10 +40,10 @@ describe('RealtimeAudio -> provider audioElementRef mirror', () => {
     }
 
     render(
-      <CosmoRealtimeProvider client={fakeClient()}>
+      <RealtimeProvider client={fakeClient()}>
         <RealtimeAudio />
         <Probe />
-      </CosmoRealtimeProvider>,
+      </RealtimeProvider>,
     );
 
     expect(captured).toBeInstanceOf(HTMLAudioElement);

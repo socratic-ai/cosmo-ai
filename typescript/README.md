@@ -28,7 +28,7 @@ installs them automatically; with yarn or pnpm run
 > **Beta.** `cosmo-ai` is pre-1.0: minor releases may contain breaking
 > changes, noted in the
 > [changelog](https://platform.askcosmo.ai/docs/meta/changelog). Pin a
-> minor (`"cosmo-ai": "~0.5.0"`) if
+> minor (`"cosmo-ai": "~0.5.1"`) if
 > you need stability. We will cut 1.0 once the session, tool, and React
 > APIs have gone several releases without breaking changes.
 

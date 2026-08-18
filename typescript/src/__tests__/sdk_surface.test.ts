@@ -15,7 +15,8 @@ describe('SDK surface', () => {
     expect(typeof Sdk.RealtimeClient).toBe('function');
     expect(typeof Sdk.RealtimeAgent).toBe('function');
     expect(typeof Sdk.RealtimeSession).toBe('function');
-    expect(typeof Sdk.CosmoRealtimeProvider).toBe('function');
+    expect(typeof Sdk.RealtimeProvider).toBe('function');
+    expect(Sdk.CosmoRealtimeProvider).toBe(Sdk.RealtimeProvider);
     expect(typeof Sdk.RealtimeAudio).toBe('function');
     expect(typeof Sdk.useMicLevel).toBe('function');
     expect(typeof Sdk.useOutputLevel).toBe('function');

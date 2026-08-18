@@ -45,7 +45,7 @@ for await (const event of session) {
   reply so the agent keeps talking, then `await job.complete({ result,
   summary })` or `await job.fail({ error })` delivers the outcome
   whenever the work lands.
-- **React**: wrap in `CosmoRealtimeProvider` and use the shipped hooks
+- **React**: wrap in `RealtimeProvider` and use the shipped hooks
   and components — the docs list them; don't rebuild transcript or
   mic-level plumbing by hand.
 

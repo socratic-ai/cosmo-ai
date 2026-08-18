@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
 import type { RealtimeClient } from '../../core/realtime_client';
-import { CosmoRealtimeProvider } from '../RealtimeProvider';
+import { RealtimeProvider } from '../RealtimeProvider';
 import { StartAudio } from '../components/StartAudio';
 
 function fakeClient(output: 'blocked' | 'silent'): RealtimeClient {
@@ -28,9 +28,9 @@ function fakeClient(output: 'blocked' | 'silent'): RealtimeClient {
 describe('StartAudio default affordance', () => {
   it('renders a default unlock button while playback is blocked', () => {
     render(
-      <CosmoRealtimeProvider client={fakeClient('blocked')}>
+      <RealtimeProvider client={fakeClient('blocked')}>
         <StartAudio />
-      </CosmoRealtimeProvider>,
+      </RealtimeProvider>,
     );
 
     expect(screen.getByRole('button', { name: 'Tap to enable voice' })).toBeTruthy();
@@ -38,9 +38,9 @@ describe('StartAudio default affordance', () => {
 
   it('renders nothing by default once playback is unblocked', () => {
     const { container } = render(
-      <CosmoRealtimeProvider client={fakeClient('silent')}>
+      <RealtimeProvider client={fakeClient('silent')}>
         <StartAudio />
-      </CosmoRealtimeProvider>,
+      </RealtimeProvider>,
     );
 
     expect(container.querySelector('button')).toBeNull();
@@ -48,9 +48,9 @@ describe('StartAudio default affordance', () => {
 
   it('hands the render prop the blocked flag instead of rendering the default', () => {
     render(
-      <CosmoRealtimeProvider client={fakeClient('silent')}>
+      <RealtimeProvider client={fakeClient('silent')}>
         <StartAudio>{({ blocked }) => <span>blocked: {String(blocked)}</span>}</StartAudio>
-      </CosmoRealtimeProvider>,
+      </RealtimeProvider>,
     );
 
     expect(screen.getByText(/blocked: false/)).toBeTruthy();

@@ -438,9 +438,9 @@ export type FieldError = {
  * ``turn_detection`` selects which detector ends the user's turn, and each
  * detector owns its knobs: ``end_of_speech_sensitivity``,
  * ``silence_duration_ms`` and ``prefix_padding_ms`` tune the provider's
- * ``server_vad``; the ``cosmo_vad`` block tunes ``cosmo_vad``. Naming a
- * detector and sending the other one's knobs is rejected at session start
- * rather than silently ignored.
+ * ``server_vad``; the ``cosmo_vad`` block tunes ``cosmo_vad`` (the Gemini
+ * default). Naming a detector and sending the other one's knobs is rejected
+ * at session start rather than silently ignored.
  */
 export type GeminiModelOptions = {
     cosmo_vad?: CosmoVadConfig;
@@ -1174,7 +1174,8 @@ export type TurnCompleteEvent = {
  * ``semantic_vad`` runs OpenAI's classifier that ends it as soon as the
  * utterance reads as complete (OpenAI-only); ``cosmo_vad`` runs Cosmo's own
  * semantic detector in the realtime worker (Gemini-only). ``None`` keeps
- * the server default (currently ``server_vad`` on both providers).
+ * the provider default: ``server_vad`` on OpenAI, ``cosmo_vad`` on
+ * Gemini.
  */
 export type TurnDetectionMode = 'server_vad' | 'semantic_vad' | 'cosmo_vad';
 
