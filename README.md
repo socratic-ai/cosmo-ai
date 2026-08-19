@@ -3,7 +3,7 @@
 <p align="center"><b>Build realtime agents that see, hear, speak — and keep getting better.</b></p>
 
 <p align="center">
-  <a href="https://askcosmo.ai">askcosmo.ai</a> ·
+  <a href="https://cosmo-ai.dev">cosmo-ai.dev</a> ·
   <a href="https://platform.askcosmo.ai/docs">Documentation</a> ·
   <a href="https://platform.askcosmo.ai/docs/meta/changelog">Changelog</a>
 </p>
