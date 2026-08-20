@@ -32,7 +32,7 @@ struct StubError: Error {}
 
 func makeStubClient(
     _ transport: StubTransport,
-    options: RealtimeSession.Options = .init(apiKey: "sk-test")
+    options: RealtimeClient.Options = .init(apiKey: "sk-test")
 ) -> RealtimeClient {
     RealtimeClient(options: options, transport: transport)
 }

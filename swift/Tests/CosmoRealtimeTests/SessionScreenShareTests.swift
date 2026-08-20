@@ -21,7 +21,7 @@ struct SessionScreenShareTests {
 
     private func makeTransport() -> LiveKitSessionTransport {
         LiveKitSessionTransport(
-            options: RealtimeSession.Options(
+            options: RealtimeClient.Options(
                 apiKey: "test-key"
             )
         )
@@ -195,7 +195,7 @@ struct VideoStreamPublishTests {
 
     private func makeTransport() -> LiveKitSessionTransport {
         LiveKitSessionTransport(
-            options: RealtimeSession.Options(apiKey: "test-key")
+            options: RealtimeClient.Options(apiKey: "test-key")
         )
     }
 

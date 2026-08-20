@@ -11,7 +11,7 @@ extension RealtimeSession {
     /// pipeline and then reconfigure to another the moment the session
     /// actually publishes, which is its own audible glitch independent of
     /// which pipeline either one uses.
-    public static func setRecordingAlwaysPrepared(_ enabled: Bool) async throws {
+    static func setRecordingAlwaysPrepared(_ enabled: Bool) async throws {
         try await AudioManager.shared.setRecordingAlwaysPreparedMode(
             enabled, audioProcessingOptions: audioProcessingOptions
         )

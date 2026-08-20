@@ -206,11 +206,11 @@ describe('SessionEnd', () => {
       stops.push(ctx);
     }));
 
-    await client.agent({ hooks }).start();
+    const session = await client.agent({ hooks }).start();
     fake.emitClose({ reason: 'livekit:server_disconnect' });
     await flushMicrotasks();
-    // A late defensive disconnect must not re-fire SessionEnd.
-    await client.disconnect();
+    // A late defensive end must not re-fire SessionEnd.
+    await session.end();
 
     expect(stops).toHaveLength(1);
     expect(stops[0]?.reason).toBe('transport_error');
@@ -225,11 +225,11 @@ describe('SessionEnd', () => {
       await flushMicrotasks();
       order.push('stop-hook');
     }));
-    client.on('lifecycle', (state) => {
+
+    const session = await client.agent({ hooks }).start();
+    session.on('lifecycle', (state) => {
       if (state.kind === 'disconnected') order.push('lifecycle-disconnected');
     });
-
-    await client.agent({ hooks }).start();
     fake.emitClose({ reason: 'livekit:server_disconnect' });
     await flushMicrotasks();
     await flushMicrotasks();
@@ -270,13 +270,13 @@ describe('SessionEnd', () => {
       stops.push(ctx);
     }));
     const lifecycles: string[] = [];
-    client.on('lifecycle', (state) => {
+
+    const session = await client.agent({ hooks }).start();
+    session.on('lifecycle', (state) => {
       if (state.kind === 'disconnected') {
         lifecycles.push(`${state.disconnectReason}:${state.detail ?? ''}`);
       }
     });
-
-    await client.agent({ hooks }).start();
     fake.emitClose({ reason: 'livekit:ROOM_DELETED' });
     await flushMicrotasks();
 
@@ -296,8 +296,8 @@ describe('SessionEnd', () => {
       stops.push(ctx);
     }));
 
-    await client.agent({ hooks }).start();
-    await client.close();
+    const session = await client.agent({ hooks }).start();
+    await session.close();
 
     expect(stops).toEqual([
       { event: 'SessionEnd', reason: 'client_closed', detail: null, sessionId: 'sess-fake' },
@@ -305,12 +305,12 @@ describe('SessionEnd', () => {
     expect(fake.lastDisconnectOpts()).toEqual({ sendEndFrame: false });
   });
 
-  it('disconnect() still requests the graceful wire end frame', async () => {
+  it('end() still requests the graceful wire end frame', async () => {
     const fake = makeFakeTransport();
     const client = new RealtimeClient({ transportFactory: () => fake });
 
-    await client.agent({}).start();
-    await client.disconnect();
+    const session = await client.agent({}).start();
+    await session.end();
 
     expect(fake.lastDisconnectOpts()).toEqual({ sendEndFrame: true });
   });
@@ -321,9 +321,9 @@ describe('user-speech-timeout', () => {
     const fake = makeFakeTransport();
     const client = new RealtimeClient({ transportFactory: () => fake });
     const events: unknown[] = [];
-    client.on('user_speech_timeout', (e) => events.push(e));
 
-    await client.agent({}).start();
+    const session = await client.agent({}).start();
+    session.on('user_speech_timeout', (e) => events.push(e));
     fake.emitMessage({
       type: 'user-speech-timeout',
       session_id: 'sess-1',

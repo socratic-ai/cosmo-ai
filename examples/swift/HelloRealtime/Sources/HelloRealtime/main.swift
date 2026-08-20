@@ -7,7 +7,7 @@ struct WeatherArgs: Decodable, Sendable {
     enum Unit: String, Decodable, Sendable { case c, f }
 }
 
-let getWeather = try SessionConfig.Tool.define(
+let getWeather = try AgentTool.define(
     name: "get_weather",
     description: "Current weather for a city",
     input: .object(
@@ -23,14 +23,14 @@ let getWeather = try SessionConfig.Tool.define(
     return ["temp": .double(unit == .c ? 21.5 : 70.7), "unit": .string(unit.rawValue)]
 }
 
-// One call starts the session: REST session-start + LiveKit join, publishing the
-// mic during the join. The external protocol scopes the project from the API key
-// server-side, so there is no project_id to pass here.
+// A client holds the credential and the endpoint; an agent is the persona
+// configured on top of it. `start` opens one run: REST session-start + LiveKit
+// join, publishing the mic during the join. The external protocol scopes the
+// project from the API key server-side, so there is no project_id to pass here.
 print("Connecting…")
-let session = try await RealtimeSession.start(
-    .init(),
-    config: SessionConfig(tools: [getWeather])
-)
+let client = try RealtimeClient()
+let agent = try client.agent(tools: [getWeather])
+let session = try await agent.start()
 
 // Consumption is a single typed event stream. Drain it on a task; `.sessionEnded`
 // is the final element and finishes the stream. No listeners to register up

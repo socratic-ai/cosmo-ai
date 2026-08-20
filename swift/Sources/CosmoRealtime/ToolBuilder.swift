@@ -1,6 +1,6 @@
 import Foundation
 
-/// A ``SessionConfig/Tool/define(name:description:input:handler:)`` declaration
+/// A ``AgentTool/define(name:description:input:handler:)`` declaration
 /// is invalid — bad tool name, missing/overlong description, or unclean text.
 /// Thrown when the tool is constructed, not at session connect.
 public struct ToolDefinitionError: Error, Sendable, Equatable, LocalizedError {
@@ -136,7 +136,7 @@ func decodeToolArguments<Args: Decodable>(
     }
 }
 
-extension SessionConfig.Tool {
+extension AgentTool {
     /// Build a ``client(name:description:parameters:handler:)`` tool whose
     /// handler receives typed arguments: the incoming args are decoded into
     /// `Args` via `JSONDecoder` before user code runs, and a decode failure
@@ -157,7 +157,7 @@ extension SessionConfig.Tool {
         description: String,
         input: ToolSchema,
         handler: @escaping @Sendable (Args) async throws -> [String: JSONValue]
-    ) throws -> SessionConfig.Tool {
+    ) throws -> AgentTool {
         let parameters = try validatedParameters(name: name, description: description, input: input)
         return .client(
             name: name,
@@ -178,7 +178,7 @@ extension SessionConfig.Tool {
         description: String,
         input: ToolSchema,
         handler: @escaping @Sendable (Args, ClientToolJob) async throws -> Void
-    ) throws -> SessionConfig.Tool {
+    ) throws -> AgentTool {
         let parameters = try validatedParameters(name: name, description: description, input: input)
         return .backgroundClient(
             name: name,

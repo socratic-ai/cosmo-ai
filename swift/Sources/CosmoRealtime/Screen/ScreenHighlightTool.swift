@@ -93,8 +93,8 @@ public enum ScreenHighlightTool {
     }
 }
 
-extension SessionConfig.Tool {
-    /// The element highlight, ready to add to ``SessionConfig/tools`` alongside
+extension AgentTool {
+    /// The element highlight, ready to add to ``RealtimeAgent/tools`` alongside
     /// the ``screenLocate(capture:)`` slot that feeds it. Same contract as
     /// ``screenClickElement(onClick:)`` — the SDK decodes and resolves the
     /// handle, your handler draws and answers honestly. A grounded handle is on
@@ -103,7 +103,7 @@ extension SessionConfig.Tool {
     /// ``screenHighlightBox(onHighlight:)`` so the model reads one reply shape.
     public static func screenHighlightElement(
         onHighlight: @escaping @Sendable (ScreenHighlightRequest) async throws -> ScreenHighlightOutcome
-    ) -> SessionConfig.Tool {
+    ) -> AgentTool {
         screenHighlightElement(cache: .shared, onHighlight: onHighlight)
     }
 
@@ -111,7 +111,7 @@ extension SessionConfig.Tool {
     static func screenHighlightElement(
         cache: ScreenCaptureCache,
         onHighlight: @escaping @Sendable (ScreenHighlightRequest) async throws -> ScreenHighlightOutcome
-    ) -> SessionConfig.Tool {
+    ) -> AgentTool {
         .sdkClient(SDKClientTool(
             name: ScreenHighlightTool.name,
             description: ScreenHighlightTool.toolDescription,

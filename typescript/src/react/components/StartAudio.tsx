@@ -4,7 +4,7 @@ import { log } from '../../core/logger';
 import { useCallback, type ReactNode } from 'react';
 
 import { useMediaState } from '../hooks';
-import { useRealtimeAudioElementRef, useRealtimeClient } from '../RealtimeProvider';
+import { useRealtimeAudioElementRef, useRealtimeSessionContext } from '../RealtimeProvider';
 
 export type StartAudioRenderArgs = {
   /** ``true`` when the browser is currently blocking remote audio
@@ -37,7 +37,7 @@ export type StartAudioProps = {
 export function StartAudio({ children, label, className }: StartAudioProps) {
   const media = useMediaState();
   const audioRef = useRealtimeAudioElementRef();
-  const client = useRealtimeClient();
+  const session = useRealtimeSessionContext();
   const blocked = media.output === 'blocked';
 
   const start = useCallback(async () => {
@@ -53,11 +53,11 @@ export function StartAudio({ children, label, className }: StartAudioProps) {
       }
     }
     try {
-      await client.resumeAudioPlayback();
+      await session?.resumeAudioPlayback();
     } catch (err) {
       log.warn('[realtime] StartAudio resumeAudioPlayback failed', err);
     }
-  }, [audioRef, client]);
+  }, [audioRef, session]);
 
   if (children) return <>{children({ blocked, start })}</>;
   if (!blocked) return null;

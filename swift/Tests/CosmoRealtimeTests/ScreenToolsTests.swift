@@ -37,12 +37,12 @@ private final class TestClock: @unchecked Sendable {
     var now = Date(timeIntervalSince1970: 1_000)
 }
 
-private func captureSlot(_ tool: SessionConfig.Tool) -> ScreenLocateTool? {
+private func captureSlot(_ tool: AgentTool) -> ScreenLocateTool? {
     guard case let .screenLocate(slot) = tool else { return nil }
     return slot
 }
 
-private func renderer(_ tool: SessionConfig.Tool) -> ClientToolHandler? {
+private func renderer(_ tool: AgentTool) -> ClientToolHandler? {
     guard case let .sdkClient(spec) = tool else { return nil }
     return spec.handler
 }

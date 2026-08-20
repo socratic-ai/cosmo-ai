@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  CosmoRealtimeProvider,
+  RealtimeProvider,
   RealtimeAudio,
   MicToggle,
-  useRealtimeClient,
+  useRealtimeSessionContext,
   useTranscript,
   useTransportState,
   RealtimeClient,
   type RealtimeClientOptions,
+  type RealtimeSession,
 } from 'cosmo-ai';
 import { tool } from 'cosmo-ai/tool';
 import { zodInput } from 'cosmo-ai/tool/zod';
@@ -568,7 +569,7 @@ function SessionView({
   onReset: () => void;
   onEnded: () => void;
 }) {
-  const client = useRealtimeClient();
+  const session = useRealtimeSessionContext();
   const transport = useTransportState();
   const transcript = useTranscript();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -592,7 +593,7 @@ function SessionView({
         <button
           className="btn btn-ghost"
           onClick={() => {
-            void client.disconnect();
+            void session?.end();
             onEnded();
           }}
         >
@@ -601,7 +602,7 @@ function SessionView({
         <button
           className="btn btn-ghost"
           onClick={() => {
-            void client.disconnect();
+            void session?.end();
             onReset();
           }}
         >
@@ -647,7 +648,7 @@ export function App() {
   const [apiKey, setApiKey] = useState(API_KEY_DEFAULT);
   const [baseUrl, setBaseUrl] = useState(BASE_URL_DEFAULT);
   const [startError, setStartError] = useState<string | null>(null);
-  const clientRef = useRef<RealtimeClient | null>(null);
+  const [session, setSession] = useState<RealtimeSession | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const handleProcessed = useCallback((r: ProcessVideoResponse) => {
@@ -657,14 +658,14 @@ export function App() {
     setVideoUrl(r.overlayVideoUrl);
   }, []);
 
-  // Keep the analysis; just drop the dead client so the start button returns.
+  // Keep the analysis; just drop the dead session so the start button returns.
   const handleEnded = useCallback(() => {
-    clientRef.current = null;
+    setSession(null);
     setConnecting(false);
   }, []);
 
   const handleReset = useCallback(() => {
-    clientRef.current = null;
+    setSession(null);
     setScene(null);
     setCoaching(null);
     setCoachingError(null);
@@ -678,9 +679,9 @@ export function App() {
     setStartError(null);
     setCosmoBaseUrl(baseUrl);
     const opts: RealtimeClientOptions = { apiKey };
-    const c = new RealtimeClient(opts);
+    const client = new RealtimeClient(opts);
     try {
-      await c
+      const started = await client
         .agent({
           instructions: buildInstructions(scene, coaching),
           tools: [makePlayVideoTool(videoRef)],
@@ -689,7 +690,7 @@ export function App() {
             : "Hey — I looked at your set. Want me to walk you through what I found?",
         })
         .start();
-      clientRef.current = c;
+      setSession(started);
     } catch (err) {
       setStartError(
         err instanceof Error && /401|invalid/i.test(err.message)
@@ -701,10 +702,8 @@ export function App() {
     }
   }, [scene, coaching, apiKey, baseUrl]);
 
-  const client = clientRef.current;
-
   return (
-    <div className={`shell${client ? " wide" : ""}`}>
+    <div className={`shell${session ? " wide" : ""}`}>
       <header className="masthead">
         <p className="eyebrow">Cosmo Realtime</p>
         <h1>Squat coach</h1>
@@ -716,7 +715,7 @@ export function App() {
 
       {!scene || !videoUrl ? (
         <UploadStep onProcessed={handleProcessed} />
-      ) : client == null ? (
+      ) : session == null ? (
         <>
           {coaching && <Findings coaching={coaching} />}
           {coachingError && (
@@ -749,14 +748,14 @@ export function App() {
           </details>
         </>
       ) : (
-        <CosmoRealtimeProvider client={client} maxTranscriptLength={50}>
+        <RealtimeProvider session={session} maxTranscriptLength={50}>
           <SessionView
             videoRef={videoRef}
             videoUrl={videoUrl}
             onReset={handleReset}
             onEnded={handleEnded}
           />
-        </CosmoRealtimeProvider>
+        </RealtimeProvider>
       )}
     </div>
   );

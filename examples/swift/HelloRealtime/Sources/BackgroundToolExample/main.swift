@@ -29,7 +29,7 @@ struct StatusArgs: Decodable, Sendable {
     let service: String
 }
 
-let checkStatus = try SessionConfig.Tool.define(
+let checkStatus = try AgentTool.define(
     name: "check_status",
     description: "Current status of a named service. Answers immediately.",
     input: .object(
@@ -50,7 +50,7 @@ struct ExportArgs: Decodable, Sendable {
 // `defineBackground` gives the handler a second argument, a `ClientToolJob`.
 // The job is the handle for one invocation: `ack` releases the reply, and
 // `complete` / `fail` delivers the outcome once the work is done.
-let exportReport = try SessionConfig.Tool.defineBackground(
+let exportReport = try AgentTool.defineBackground(
     name: "export_report",
     description: """
         Export the quarterly report. Takes a while, so it returns immediately \
@@ -89,8 +89,9 @@ actor ReadyFlag {
 }
 let readyFlag = ReadyFlag()
 
-let options = try RealtimeSession.Options()
-let config = SessionConfig(
+let options = try RealtimeClient.Options()
+let client = RealtimeClient(options)
+let agent = try client.agent(
     instructions: """
         You are a terse reporting assistant. When the user asks for an export, \
         call export_report, then tell them it is running and stay available. \
@@ -100,7 +101,7 @@ let config = SessionConfig(
 )
 
 print("Connecting to \(options.baseURL.absoluteString)…")
-let session = try await RealtimeSession.start(options, config: config, micMuted: true)
+let session = try await agent.start(micMuted: true)
 
 let pump = Task {
     do {

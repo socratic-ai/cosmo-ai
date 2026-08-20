@@ -3,14 +3,14 @@ import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { useEffect, type MutableRefObject } from 'react';
 
-import type { RealtimeClient } from '../../core/realtime_client';
+import type { RealtimeSession } from '../../core/session';
 import { RealtimeProvider, useRealtimeAudioElementRef } from '../RealtimeProvider';
 import { RealtimeAudio } from '../components/RealtimeAudio';
 
-function fakeClient(): RealtimeClient {
+function fakeSession(): RealtimeSession {
   return {
     attachAudioElement: vi.fn(),
-    setMicMuted: vi.fn(),
+    setMuted: vi.fn(),
     on: vi.fn(() => () => undefined),
     getSnapshot: () => ({
       transportState: 'disconnected',
@@ -22,7 +22,7 @@ function fakeClient(): RealtimeClient {
       },
       error: null,
     }),
-  } as unknown as RealtimeClient;
+  } as unknown as RealtimeSession;
 }
 
 describe('RealtimeAudio -> provider audioElementRef mirror', () => {
@@ -40,7 +40,7 @@ describe('RealtimeAudio -> provider audioElementRef mirror', () => {
     }
 
     render(
-      <RealtimeProvider client={fakeClient()}>
+      <RealtimeProvider session={fakeSession()}>
         <RealtimeAudio />
         <Probe />
       </RealtimeProvider>,

@@ -40,7 +40,7 @@ func makeRESTSession(
 /// calls, with the options' timeouts and loopback-TLS policy applied.
 /// Shared by the session transport, the prepare path, and the mint client
 /// so their request plumbing can't drift.
-func makeRESTTransport(options: RealtimeSession.Options) -> URLSessionTransport {
+func makeRESTTransport(options: RealtimeClient.Options) -> URLSessionTransport {
     let configuration = URLSessionConfiguration.default
     configuration.timeoutIntervalForRequest = options.requestTimeout
     configuration.timeoutIntervalForResource = options.requestTimeout

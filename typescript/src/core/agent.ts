@@ -26,6 +26,7 @@ import type { ClientToolJob } from './client_tool_jobs';
 import { Hook, HookEngine, type ServerHook, resolveHooks } from './hooks';
 import type { RealtimeClient } from './realtime_client';
 import type { RealtimeSession } from './session';
+import type { SessionLifecycleState } from './state';
 import {
   type Skill,
   buildLoadSkillTool,
@@ -233,10 +234,20 @@ export type OpenAIMiniModelOptions = {
   provider: 'openai_mini';
 };
 
-/** xAI Grok Voice model knobs — untunable today, like the OpenAI mini
- *  tier. */
+/** xAI Grok Voice model knobs. Grok pins its own sampling and token limits,
+ *  so only turn-taking is tunable here.
+ *
+ *  Grok runs one detector — a fixed silence window — so both knobs always
+ *  apply. Naming any other detector is rejected at session start. */
 export type GrokModelOptions = {
   provider: 'grok';
+  /** Ends the turn after a fixed window of silence — the only detector Grok
+   *  offers, and what unset selects. */
+  turnDetection?: 'server_vad';
+  /** Silence (ms, 0–5000) that ends the user's turn. */
+  silenceDurationMs?: number;
+  /** Audio (ms, 0–5000) kept from before speech was detected. */
+  prefixPaddingMs?: number;
 };
 
 /** Provider-scoped model knobs, discriminated on ``provider``. Each knob is
@@ -389,6 +400,19 @@ export type SessionStartOptions = {
    *  participant actually carries the voice (a published mic, or the
    *  answered phone leg). */
   publishMicrophone?: boolean;
+  /** Observe the run's connection lifecycle (``idle → connecting →
+   *  connected ↔ reconnecting → disconnected``). Subscribed before the
+   *  connect begins, so the callback sees the full state prefix — states
+   *  that fire before ``start()`` resolves included. Stops at this run's
+   *  terminal state. */
+  onStateChange?: (state: SessionLifecycleState) => void;
+  /** Receive the session before its connect begins — the same object
+   *  ``start()`` resolves to. Callbacks attached here are in place before
+   *  any event can fire, which is the only way to observe events the
+   *  connect itself produces: ``start()`` resolves after the transport is
+   *  up, and only ``ready`` and ``lifecycle`` replay to late subscribers.
+   *  A run that fails to start still calls this, then throws. */
+  onSession?: (session: RealtimeSession) => void;
 };
 
 function prune<T extends object>(obj: T): T | undefined {
@@ -514,7 +538,14 @@ function toWireModelOptions(
     case 'openai_mini':
       return { provider: 'openai_mini' };
     case 'grok':
-      return { provider: 'grok' };
+      return {
+        provider: 'grok',
+        ...prune({
+          turn_detection: mo.turnDetection,
+          silence_duration_ms: mo.silenceDurationMs,
+          prefix_padding_ms: mo.prefixPaddingMs,
+        }),
+      };
   }
 }
 
@@ -670,6 +701,8 @@ export class RealtimeAgent {
     return this.client._startSession({
       config,
       publishMicrophone: opts.publishMicrophone ?? true,
+      onStateChange: opts.onStateChange,
+      onSession: opts.onSession,
       clientTools: tools.filter(
         (tool): tool is ClientToolSpec | BackgroundClientToolSpec =>
           tool.kind === 'client',

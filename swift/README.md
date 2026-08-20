@@ -28,7 +28,7 @@ it; file issues on cosmo-ai.
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/socratic-ai/cosmo-swift-sdk", from: "0.6.0"),
+    .package(url: "https://github.com/socratic-ai/cosmo-swift-sdk", from: "0.7.0"),
 ],
 targets: [
     .target(
@@ -69,8 +69,9 @@ MCP endpoint at `/docs/api/mcp`).
 
 ## Quickstart
 
-One call starts a session; everything the server says arrives on a single
-typed event stream.
+Three objects, one per concern: a **client** holds your credential, an
+**agent** is a reusable persona, and a **session** is one live run.
+Everything the server says arrives on a single typed event stream.
 
 ```swift
 import CosmoRealtime
@@ -79,28 +80,29 @@ struct WeatherArgs: Decodable, Sendable {
     let city: String
 }
 
-let session = try await RealtimeSession.start(
-    .init(apiKey: "cosmo_your_api_key"),
-    config: SessionConfig(
-        instructions: "You are a terse assistant.",
-        tools: [
-            // Client tool: the agent runs it over the transport and the
-            // returned object is reported back as the result.
-            try SessionConfig.Tool.define(
-                name: "get_weather",
-                description: "Current weather for a city.",
-                input: .object(
-                    properties: ["city": .string(description: "City name")],
-                    required: ["city"]
-                )
-            ) { (args: WeatherArgs) in
-                ["temp": .double(21.5), "city": .string(args.city)]
-            },
-            .webSearch,
-        ],
-        greeting: "Hi — what can I do for you?"
-    )
+let client = RealtimeClient(.init(apiKey: "cosmo_your_api_key"))
+
+let agent = try client.agent(
+    instructions: "You are a terse assistant.",
+    tools: [
+        // Client tool: the agent runs it over the transport and the
+        // returned object is reported back as the result.
+        try AgentTool.define(
+            name: "get_weather",
+            description: "Current weather for a city.",
+            input: .object(
+                properties: ["city": .string(description: "City name")],
+                required: ["city"]
+            )
+        ) { (args: WeatherArgs) in
+            ["temp": .double(21.5), "city": .string(args.city)]
+        },
+        .webSearch,
+    ],
+    greeting: "Hi — what can I do for you?"
 )
+
+let session = try await agent.start()
 
 for try await event in session.events {
     switch event {
@@ -124,7 +126,7 @@ for try await event in session.events {
 }
 ```
 
-The microphone is published during `start(...)` unless you pass
+The microphone is published during `agent.start(...)` unless you pass
 `micMuted: true`. Nothing is captured or sent until the first
 `setMuted(false)` — do that for a push-to-talk UX, and to be sure a session
 your UI presents as muted never streams audio during the connect window.
@@ -138,9 +140,9 @@ needs its own purpose string. See
 
 ## API
 
-### `RealtimeSession.Options`
+### `RealtimeClient.Options`
 
-Client-level settings; pass once per `start`.
+Client-level settings; pass once when you construct the client.
 
 | Property | Type | Default |
 |---|---|---|
@@ -156,15 +158,15 @@ Client-level settings; pass once per `start`.
 // Workspace-scoped key. Server-side only — it opens sessions AND mints
 // end-user tokens (minting ships in the opt-in CosmoRealtimeMint product:
 // `import CosmoRealtimeMint`). Never embed it in a distributed app.
-RealtimeSession.Options(apiKey: "cosmo_…")
+RealtimeClient.Options(apiKey: "cosmo_…")
 
 // A minted per-user JWT, scoped to one external user. Safe to ship in a
 // device or browser: it opens sessions but cannot mint.
-RealtimeSession.Options(token: jwt)
+RealtimeClient.Options(token: jwt)
 
 // A TokenSource: the SDK fetches the JWT from your minting endpoint,
 // caches it, and re-fetches as expiry nears — no refresh code in the app.
-RealtimeSession.Options(tokenSource: try .endpoint(
+RealtimeClient.Options(tokenSource: try .endpoint(
     URL(string: "https://your-backend.example.com/token")!,
     headers: ["Authorization": "Bearer \(appSession)"]
 ))
@@ -174,7 +176,7 @@ RealtimeSession.Options(tokenSource: try .endpoint(
 // COSMO_PROFILE; the CLI installs with `pipx install cosmo-cli`),
 // adopting the backend the stored key was issued for.
 // Throws CredentialsError when nothing usable resolves.
-try RealtimeSession.Options()
+try RealtimeClient()
 ```
 
 `baseURL` is not an argument. It resolves from `COSMO_BASE_URL` — the same
@@ -193,31 +195,49 @@ One process, one backend.
 hosts so a self-signed local-dev backend works; remote hosts are always
 verified.
 
-### `SessionConfig`
+### Agents
 
-Per-session configuration. Every field is optional — unset fields stay off
-the wire and the server applies neutral defaults.
+`client.agent(...)` builds an inline persona — what the agent *is*,
+independent of any one run. Every parameter is optional; unset fields stay
+off the wire and the server applies neutral defaults. It throws on duplicate
+skill names, when the agent is built rather than mid-call.
 
-| Field | Meaning |
+| Parameter | Meaning |
 |---|---|
-| `agentName` | Run a workspace catalog agent by handle; the stored config runs verbatim. Only `agentInputs`, `tools`, and `voice` may accompany it |
-| `agentInputs` | Template placeholder values for the referenced agent. Valid only alongside `agentName` |
-| `model` | Provider/model selection |
-| `modelOptions` | Provider-scoped model knobs, discriminated on provider (`.gemini`, `.openai`, `.ultravox`, `.personaplex`) so an illegal pairing is unrepresentable |
-| `voice` | How the agent sounds: `.init(name:speakingStyle:)` — prebuilt voice id plus delivery guidance |
-| `audio` | The audio pipeline: `.init(output:noiseCancellation:ambience:)` — ambience present = enabled |
 | `instructions` | System instructions |
+| `model` | Provider/model selection |
+| `modelOptions` | Provider-scoped model knobs, discriminated on provider (`.gemini`, `.openai`, `.openaiMini`, `.grok`) so an illegal pairing is unrepresentable |
+| `voice` | How the agent sounds: `VoiceConfig(name:speakingStyle:)` — prebuilt voice id plus delivery guidance |
+| `audio` | The audio pipeline: `AudioConfig(output:noiseCancellation:ambience:)` — ambience present = enabled |
 | `tools` | Client-executed specs this app fulfills, and typed zero-config server-tool opt-ins (`.webSearch`, `.examineImage`, `.detectObjects`, `.pointAtObject`) |
 | `interruptionSensitivity` | How readily the user's speech interrupts the agent (`.default` / `.low` / `.high`) |
 | `greeting` | Opening line the assistant speaks first, voiced server-side as soon as the model session opens — before the client even receives `ready` |
+| `skills` | Agent Skills folded into the persona — see [Skills](#skills) |
+| `mcp` | MCP servers whose tools join the set at start — see [MCP servers](#mcp-servers-local-stdio) |
+| `hooks` | Lifecycle observers and policy gates — see [Hooks](#hooks) |
+
+`client.catalogAgent(name, inputs:voice:tools:mcp:hooks:)` runs a workspace
+catalog agent by handle instead. The stored config runs verbatim, so only
+those per-run ride-alongs are accepted — the stored-config fields have no
+parameter, which makes the illegal combination a compile error.
+
+### Session runs
+
+`agent.start(...)` opens one run. Its parameters are the values that differ
+between two runs of the same persona, and all are optional:
+
+| Parameter | Meaning |
+|---|---|
 | `resumeSessionId` | Resume a prior session (rides under the experimental knobs) |
 | `maxSessionSeconds` | Requested wall-clock cap. The server takes the minimum of this and its own limit, and echoes the effective value on `ready` |
 | `storeRecording` | Persist this run's recording artifacts server-side |
-| `hooks` | Lifecycle observers and policy gates — see [Hooks](#hooks) |
+| `storeAudio` / `storeTranscript` / `storeVideo` | Persist one artifact class each; wins over `storeRecording` |
+| `micMuted` | Join without publishing the microphone |
+| `rpcHandlers` | Client-tool handlers registered by name but not advertised to the agent |
 
 ### Tools
 
-`SessionConfig.Tool.define` is the tool API to reach for: you write a
+`AgentTool.define` is the tool API to reach for: you write a
 `ToolSchema` and a `Decodable` args struct, and the SDK validates the
 declaration at construction and decodes the arguments for you.
 
@@ -227,7 +247,7 @@ struct BookArgs: Decodable, Sendable {
     let partySize: Int
 }
 
-let bookTable = try SessionConfig.Tool.define(
+let bookTable = try AgentTool.define(
     name: "book_table",
     description: "Reserve a table.",
     input: .object(
@@ -273,7 +293,7 @@ Handlers are local-only — never serialized, never on the wire.
   synthesized locally on `end()`, teardown, or a transport drop. The server
   publishes a best-effort `session-ended` wire frame before a deliberate
   teardown; the SDK latches its reason onto the sentinel rather than
-  surfacing the frame mid-stream. Start failures throw from `start(...)`
+  surfacing the frame mid-stream. Start failures throw from `agent.start(...)`
   instead (for example, `RealtimeSessionError.versionMismatch`).
 
 Oversized server messages arrive chunked (`server-envelope-chunk`) and are
@@ -310,7 +330,7 @@ That reduction is correct for the common path. Two cases need more:
 
 - **An empty final closes the turn.** It means an empty turn, not "unchanged" —
   skip it and the turn's bubble dangles into the next one.
-- **On a text-only session** (`audio: .init(output: false)`) a user final that
+- **On a text-only session** (`audio: AudioConfig(output: false)`) a user final that
   arrives after the endpointer already committed an utterance carries only the
   remainder, so replacing on it drops the committed prefix.
 
@@ -359,8 +379,8 @@ so it never outlives the session.
 
 ## Hooks
 
-Attach lifecycle observers and policy gates to any session by putting `Hook`
-values on `SessionConfig.hooks`. Four events fire: **SessionStart** (before the
+Attach lifecycle observers and policy gates to any agent by putting `Hook`
+values on its `hooks`. Four events fire: **SessionStart** (before the
 wire frame is sent), **PreToolUse** (before a client tool runs), **PostToolUse**
 (after), and **SessionEnd** (once, on any exit path). SessionStart and
 PreToolUse carry honored overrides: return `SessionStartResult(additionalContext:)`
@@ -370,8 +390,7 @@ skipped; sibling hooks still run. Hooks are local-only — closures are never
 serialized or sent on the wire.
 
 ```swift
-var config = SessionConfig()
-config.hooks = [
+let agent = try client.agent(hooks: [
     sessionStart { _ in
         SessionStartResult(additionalContext: "The user is on the premium plan.")
     },
@@ -381,9 +400,9 @@ config.hooks = [
     },
     try postToolUse { ctx in print(ctx.toolName, ctx.outcome) },
     sessionEnd { ctx in print("session stopped:", ctx.reason ?? "unknown") },
-]
+])
 
-let session = try await RealtimeSession.start(options, config: config)
+let session = try await agent.start()
 ```
 
 `preToolUse` and `postToolUse` take an optional glob matcher on the tool name
@@ -415,25 +434,27 @@ suppresses it before the handler is invoked.
 ## Skills
 
 Attach **Agent Skills** (the `SKILL.md` standard) to the model through the
-`RealtimeAgent` layer. Parsed skills become a single resident `cosmo_sdk_load_skill`
-tool plus a hot-set menu appended to `SessionConfig.instructions`; the model
+agent. Parsed skills become a single resident `cosmo_sdk_load_skill`
+tool plus a hot-set menu appended to the agent's instructions; the model
 calls `cosmo_sdk_load_skill(name)` when the conversation reaches a skill's path
 and receives the body as private, never-spoken instructions for the rest of the
 call.
 
 ```swift
+let client = RealtimeClient(.init(token: jwt))
 let skills = [try parseSkillMd(refundsMarkdown, defaultName: "refunds")]
-let agent = try RealtimeAgent(skills: skills)
-let session = try await agent.start(
-    RealtimeSession.Options(token: jwt),
-    config: SessionConfig(instructions: "You are a terse support agent."))
+let agent = try client.agent(
+    instructions: "You are a terse support agent.",
+    skills: skills
+)
+let session = try await agent.start()
 // the menu is now resident; the model can call cosmo_sdk_load_skill("refunds")
 await session.end()
 ```
 
-`RealtimeAgent.init` **throws**: duplicate skill names are rejected when the agent is
-built, not mid-call. `RealtimeAgent` composes skills, MCP, and caller tools together —
-all land in `SessionConfig.tools`. Every attached skill rides resident as
+`client.agent(...)` **throws**: duplicate skill names are rejected when the agent is
+built, not mid-call. The agent composes skills, MCP, and caller tools together —
+all land in the session's tool set. Every attached skill rides resident as
 `name` + `description`; only the body is deferred to `cosmo_sdk_load_skill`. Unknown
 `SKILL.md` frontmatter keys (`tier`, `allowed-tools`, `license`, …) are
 accepted and ignored, so documents authored for other harnesses stay valid.
@@ -443,16 +464,16 @@ accepted and ignored, so documents authored for other harnesses stay valid.
 ## MCP servers (local stdio)
 
 Expose a local [MCP](https://modelcontextprotocol.io) server's tools to the
-realtime model through the `RealtimeAgent` layer. Declare servers in a Claude-Code
+realtime model through the agent. Declare servers in a Claude-Code
 `.mcp.json`; the SDK spawns each, lists its tools, and proxies calls — tools are
-namespaced `mcp__<server>__<tool>` and ride in `SessionConfig.tools` as ordinary
+namespaced `mcp__<server>__<tool>` and ride in the session's tool set as ordinary
 client tools.
 
 ```swift
+let client = RealtimeClient(.init(token: jwt))
 let registry = try McpRegistry.fromConfigFile(url)
-let agent = try RealtimeAgent(mcp: registry)
-let session = try await agent.start(
-    RealtimeSession.Options(token: jwt))
+let agent = try client.agent(mcp: registry)
+let session = try await agent.start()
 // drive session.events … ; then:
 await session.end()
 ```
@@ -471,11 +492,11 @@ Workspace-scoped API key with `realtime:use` scope, passed as:
 Authorization: Bearer cosmo_<key>
 ```
 
-The key is injected automatically via `RealtimeSession.Options(apiKey:)`. For
+The key is injected automatically via `RealtimeClient.Options(apiKey:)`. For
 anything you distribute, mint a per-user token instead and construct with
-`RealtimeSession.Options(token:)`.
+`RealtimeClient.Options(token:)`.
 
-`RealtimeClient(options).verify()` checks the credential without starting a
+`client.verify()` checks the credential without starting a
 session — free, no room, no agent. It returns the workspace it's bound to, its
 scopes, whether it carries `realtime:use` (`canStartSessions`), and whether the
 deployment has the default voice stack configured (`realtimeVoiceAvailable`).
@@ -490,18 +511,20 @@ after it ends. `usageStatus` reports whether the detailed summary is there:
 `.pending` while it may still land, `.recorded` once the numbers are final,
 `.unavailable` when none was written and none will be. `tokens` is nil when
 the provider doesn't report token usage. Throws `UsageError`.
-`RealtimeClient(options).sessionUsage(sessionId:)` is the client-level form.
+`client.sessionUsage(sessionId:)` is the client-level form.
 
 ## Architecture
 
 ```
-RealtimeSession (actor)                  — public stream API
- ├── events / states                     — AsyncThrowingStream / AsyncStream
- ├── EnvelopeReassembler (actor)         — server-envelope-chunk reassembly
- └── SessionTransport                    — protocol-agnostic transport seam
-      └── LiveKitSessionTransport        — production implementation
-           ├── CosmoRealtimeAPI.Client   — POST /api/v1/external/realtime/session/start
-           └── Room (LiveKit)            — WebRTC audio + data channel
+RealtimeClient (struct)                  — credential, endpoints, agent factories
+ └── RealtimeAgent (struct)              — the persona; reused across runs
+      └── RealtimeSession (actor)        — one run: the public stream API
+           ├── events / states           — AsyncThrowingStream / AsyncStream
+           ├── EnvelopeReassembler       — server-envelope-chunk reassembly
+           └── SessionTransport          — protocol-agnostic transport seam
+                └── LiveKitSessionTransport         — production implementation
+                     ├── CosmoRealtimeAPI.Client    — POST /api/v1/external/realtime/session/start
+                     └── Room (LiveKit)             — WebRTC audio + data channel
 ```
 
 Generated wire types live in the internal `CosmoRealtimeAPI` module

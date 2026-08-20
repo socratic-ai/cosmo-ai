@@ -17,6 +17,7 @@ from cosmo_ai import (
     EndCallTool,
     ExamineImageTool,
     GeminiModelOptions,
+    GrokModelOptions,
     OpenAIModelOptions,
     PointAtObjectTool,
     WebSearchTool,
@@ -140,6 +141,26 @@ def test_openai_turn_detection_knobs_serialize_under_their_wire_names() -> None:
     assert opts["turn_detection"] == "semantic_vad"
     assert opts["eagerness"] == "high"
     assert "silence_duration_ms" not in opts
+
+
+def test_grok_turn_detection_knobs_serialize_under_their_wire_names() -> None:
+    body = start_body(
+        model="grok",
+        model_options=GrokModelOptions(
+            turn_detection="server_vad", silence_duration_ms=200, prefix_padding_ms=100
+        ),
+    )
+    opts = body["agent"]["model_options"]
+    assert opts["provider"] == "grok"
+    assert opts["turn_detection"] == "server_vad"
+    assert opts["silence_duration_ms"] == 200
+    assert opts["prefix_padding_ms"] == 100
+
+
+def test_grok_block_has_no_semantic_pacing_knob() -> None:
+    # xAI offers the silence window only, so eagerness has no home here.
+    with pytest.raises(ValidationError):
+        GrokModelOptions(eagerness="high")  # type: ignore[call-arg]
 
 
 def test_model_options_reject_cross_provider_knob() -> None:

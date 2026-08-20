@@ -202,7 +202,7 @@ describe('RealtimeSession.usage', () => {
     await session.end();
     // The engine drops its session id at teardown; the id the session bound
     // at start is what keeps usage() working after the call.
-    expect(client.getSessionId()).toBeNull();
+    expect(session.sessionId).toBeNull();
 
     fetchMock.mockResolvedValue(okResponse(RECORDED_BODY));
     const usage = await session.usage();
@@ -240,7 +240,7 @@ describe('RealtimeSession.usage', () => {
     const first = await client.agent().start();
 
     const ending = first.end();
-    for (let i = 0; i < 50 && client.getSessionId() !== null; i++) {
+    for (let i = 0; i < 50 && first.sessionId !== null; i++) {
       await Promise.resolve();
     }
     const second = await client.agent().start();
@@ -267,7 +267,6 @@ describe('RealtimeSession.usage', () => {
         `https://api.example.com/api/v1/external/sessions/${sessionId}/usage`,
       resolveAuthHeaders: async () => ({}),
       onStartUnauthorized: () => {},
-      defaultAudioElement: () => null,
     });
     const session = new RealtimeSession(engine);
 

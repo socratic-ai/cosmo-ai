@@ -5,7 +5,7 @@ import Foundation
 /// verbatim server-side (`first_message` → "say exactly this"), so a directive
 /// sent there is read aloud instead of followed.
 public enum ConnectGreeting {
-    /// Verbatim opening line for ``SessionConfig/greeting``. Spoken as written,
+    /// Verbatim opening line for ``RealtimeAgent/greeting``. Spoken as written,
     /// so it is speech and never an instruction. Greets by the first word of
     /// the name that isn't an abbreviation, which suits western given-name-first
     /// names; a name written as one word (many CJK names) is spoken whole.
@@ -24,7 +24,7 @@ public enum ConnectGreeting {
     public static let instruction: String =
         "Greet in 2-4 words, naming yourself Cosmo — like \"Cosmo here!\" or \"Hey, it's Cosmo.\" Then stop and wait."
 
-    /// How the model should use the user's name, for ``SessionConfig/speakingStyle``
+    /// How the model should use the user's name, for ``VoiceConfig/speakingStyle``
     /// — the server appends it to whatever persona it built, so it needs no
     /// host prompt to attach to and it survives a catalog agent's stored
     /// config. The name rides here rather than the opening line because it

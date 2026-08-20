@@ -6,7 +6,7 @@ import os
 /// Reads `COSMO_BASE_URL` — the same variable the Python and TypeScript SDKs
 /// read — and falls back to production. An app that pairs a stored credential
 /// with the backend it was issued for (the Mac app's keychain entry) passes
-/// ``RealtimeSession/Options/baseURL`` explicitly instead; a process
+/// ``RealtimeClient/Options/baseURL`` explicitly instead; a process
 /// environment is not where a GUI app's backend choice lives.
 public enum RealtimeBaseURL {
     public static let productionBaseURL = URL(string: "https://platform.askcosmo.ai")!
@@ -16,7 +16,7 @@ public enum RealtimeBaseURL {
         subsystem: CosmoRealtimeLog.subsystem, category: "client"
     )
 
-    /// A URL no ``RealtimeSession/start(_:config:micMuted:rpcHandlers:)`` will
+    /// A URL no ``RealtimeAgent/start(resumeSessionId:maxSessionSeconds:storeRecording:storeAudio:storeTranscript:storeVideo:micMuted:rpcHandlers:)`` will
     /// accept, so an unparseable `COSMO_BASE_URL` fails loudly at session start
     /// rather than silently opening a session against production.
     private static let unparseable = URL(string: "cosmo:invalid-base-url")!

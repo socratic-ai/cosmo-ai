@@ -13,10 +13,8 @@ struct DialRequestTests {
     private func options(
         key: String = "cosmo_secret",
         base: String = "https://api.example.com"
-    ) -> RealtimeSession.Options {
-        var options = RealtimeSession.Options(apiKey: key)
-        options.baseURL = URL(string: base)!
-        return options
+    ) -> RealtimeClient.Options {
+        RealtimeClient.Options(apiKey: key, baseURL: URL(string: base)!)
     }
 
     @Test("POSTs to the session dial path with bearer auth + JSON content-type")

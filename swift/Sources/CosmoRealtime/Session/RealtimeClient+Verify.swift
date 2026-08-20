@@ -39,7 +39,7 @@ extension RealtimeClient {
     /// realtime/verify).
     ///
     /// A free preflight for a launch-time check or a CI smoke test: it
-    /// confirms the credential authenticates against ``RealtimeSession/Options/baseURL``,
+    /// confirms the credential authenticates against ``RealtimeClient/Options/baseURL``,
     /// and the result separates the failure modes a first session would
     /// otherwise conflate — under-scoped (``CredentialInfo/canStartSessions``)
     /// versus a deployment with no default voice stack configured

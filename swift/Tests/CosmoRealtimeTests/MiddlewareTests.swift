@@ -135,7 +135,7 @@ struct MiddlewareTests {
     )
     func bearerEmitsValueForBothCredentialForms(token: String) async throws {
         for credential in [
-            RealtimeSession.Options.Credential.apiKey(token), .token(token),
+            RealtimeClient.Options.Credential.apiKey(token), .token(token),
         ] {
             let middleware = BearerAuthMiddleware(credential: credential)
             let request = makeRequest()

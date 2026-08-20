@@ -1,16 +1,17 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
-  CosmoRealtimeProvider,
+  RealtimeProvider,
   RealtimeAudio,
   MicToggle,
-  useRealtimeClient,
+  useRealtimeSessionContext,
   useTranscript,
   useToolCalls,
   useTransportState,
   RealtimeClient,
   type RealtimeClientOptions,
+  type RealtimeSession,
 } from 'cosmo-ai';
 import { tool } from 'cosmo-ai/tool';
 import { zodInput } from 'cosmo-ai/tool/zod';
@@ -84,14 +85,14 @@ function SessionForm({
 }
 
 function SessionView() {
-  const client = useRealtimeClient();
+  const session = useRealtimeSessionContext();
   const transport = useTransportState();
   const transcript = useTranscript();
   const toolCalls = useToolCalls();
 
   const handleEnd = useCallback(() => {
-    void client.disconnect();
-  }, [client]);
+    void session?.end();
+  }, [session]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -164,25 +165,22 @@ function SessionView() {
 
 export function App() {
   const [connecting, setConnecting] = useState(false);
-  const clientRef = useRef<RealtimeClient | null>(null);
+  const [session, setSession] = useState<RealtimeSession | null>(null);
 
   const handleStart = useCallback(
     async (apiKey: string, baseUrl: string) => {
       setConnecting(true);
       setCosmoBaseUrl(baseUrl);
       const opts: RealtimeClientOptions = { apiKey };
-      const c = new RealtimeClient(opts);
-      clientRef.current = c;
+      const client = new RealtimeClient(opts);
       try {
-        await c.agent({ tools: [getLocalTime] }).start();
+        setSession(await client.agent({ tools: [getLocalTime] }).start());
       } finally {
         setConnecting(false);
       }
     },
     [],
   );
-
-  const client = clientRef.current;
 
   return (
     <div style={{ fontFamily: 'system-ui, sans-serif', maxWidth: 640, margin: '40px auto', padding: '0 20px' }}>
@@ -191,12 +189,12 @@ export function App() {
         Demo page for <code>cosmo-ai</code> — voice + transcript + tool calls.
       </p>
 
-      {client == null ? (
+      {session == null ? (
         <SessionForm onStart={handleStart} disabled={connecting} />
       ) : (
-        <CosmoRealtimeProvider client={client} maxTranscriptLength={50}>
+        <RealtimeProvider session={session} maxTranscriptLength={50}>
           <SessionView />
-        </CosmoRealtimeProvider>
+        </RealtimeProvider>
       )}
     </div>
   );

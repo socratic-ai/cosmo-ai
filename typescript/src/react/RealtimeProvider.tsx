@@ -11,65 +11,35 @@ import {
   type ReactNode,
 } from 'react';
 
-import { RealtimeClient, type RealtimeClientOptions } from '../core/realtime_client';
+import type { RealtimeSession } from '../core/session';
 import type { ErrorEvent } from '../core/types';
 import type {
-  RealtimeEventMap,
-  RealtimeEventName,
   ToolCallEvent,
   ToolResultEvent,
   Unsubscribe,
 } from '../core/events';
-import type { AgentState, MediaState, TransportState } from '../core/state';
+import {
+  INITIAL_SNAPSHOT,
+  type AgentState,
+  type MediaState,
+  type TransportState,
+} from '../core/state';
 import { reduceTranscript, type RealtimeTranscriptItem } from '../core/transcript_reducer';
 
 /**
  * Canonical React-first surface for the Cosmo Realtime SDK.
  *
- * Two configurations are supported:
+ * The provider is the read side of one ``RealtimeSession``: pass it the
+ * session a run returned (``useRealtimeSession``'s ``session``, or your
+ * own ``agent.start()`` result) and it publishes a React snapshot through
+ * context so the read-only hooks (``useTransportState`` /
+ * ``useAgentState`` / ``useMediaState`` / ``useTranscript`` /
+ * ``useToolCalls``) read from React state. With no session (``null``,
+ * between runs) the snapshot is the initial idle state.
  *
- *  - ``<RealtimeProvider client={myClient}>`` — host supplies a
- *    constructed ``RealtimeClient``. Lifecycle is the host's; the
- *    provider does NOT disconnect on unmount.
- *  - ``<RealtimeProvider getAuthHeaders={…}>`` — provider constructs the
- *    underlying ``RealtimeClient`` and owns its lifecycle; ``disconnect()``
- *    runs on unmount or when a construction prop changes.
- *
- * The provider subscribes to the client's typed event stream and
- * publishes a React snapshot through context so the read-only hooks
- * (``useTransportState`` / ``useAgentState`` / ``useMediaState`` /
- * ``useTranscript`` / ``useToolCalls``) read from React state.
+ * Session lifecycle stays the caller's: the provider never starts or
+ * ends anything.
  */
-
-/** Methods every consumer of the context can call on the client. */
-export type RealtimeClientLike = Pick<
-  RealtimeClient,
-  | 'agent'
-  | 'disconnect'
-  | 'waitUntilReady'
-  | 'sendText'
-  | 'sendContext'
-  | 'dial'
-  | 'registerRpcMethod'
-  | 'setMicMuted'
-  | 'setOutputBlocked'
-  | 'resumeAudioPlayback'
-  | 'startScreenShare'
-  | 'stopScreenShare'
-  | 'getVisionInputStatus'
-  | 'addVideoStream'
-  | 'removeVideoStream'
-  | 'startAudioStream'
-  | 'stopAudioStream'
-  | 'attachAudioElement'
-  | 'isActive'
-  | 'getSnapshot'
-> & {
-  on<E extends RealtimeEventName>(
-    event: E,
-    handler: (payload: RealtimeEventMap[E]) => void,
-  ): Unsubscribe;
-};
 
 export type { RealtimeTranscriptItem };
 
@@ -86,13 +56,13 @@ export type RealtimeSnapshotState = {
   mediaState: MediaState;
   transcript: RealtimeTranscriptItem[];
   toolCalls: RealtimeToolCallItem[];
-  /** Most recent terminal-ish error. Cleared back to ``null`` on the
-   *  next successful session start. */
+  /** Most recent terminal-ish error. Cleared back to ``null`` when the
+   *  next session is supplied. */
   error: ErrorEvent | null;
 };
 
 export type RealtimeContextValue = {
-  client: RealtimeClientLike;
+  session: RealtimeSession | null;
   /** Host-supplied ``<audio>`` element ref. Populated by
    *  ``<RealtimeAudio />``; ``null`` when no host element is mounted. */
   audioElementRef: MutableRefObject<HTMLAudioElement | null>;
@@ -107,14 +77,14 @@ export type RealtimeContextValue = {
  *  reaches back further than what's in this array. */
 const DEFAULT_MAX_TRANSCRIPT_LEN = 12;
 
-/** Seed the provider's React snapshot from whatever the client already
+/** Seed the provider's React snapshot from whatever the session already
  *  knows. Transcript / tool-call lists are event-stream-derived and
- *  start empty on every mount; lifecycle fields (transport / agent /
- *  media) come from the live client so a provider mounted around an
- *  already-connected client doesn't briefly show ``disconnected``
+ *  start empty on every session change; lifecycle fields (transport /
+ *  agent / media) come from the live session so a provider handed an
+ *  already-connected session doesn't briefly show ``disconnected``
  *  until the next event fires. */
-function snapshotFromClient(client: RealtimeClientLike): RealtimeSnapshotState {
-  const snap = client.getSnapshot();
+function snapshotFromSession(session: RealtimeSession | null): RealtimeSnapshotState {
+  const snap = session !== null ? session.getSnapshot() : INITIAL_SNAPSHOT;
   return {
     transportState: snap.transportState,
     agentState: snap.agentState,
@@ -129,19 +99,11 @@ const RealtimeContext = createContext<RealtimeContextValue | null>(null);
 
 export type RealtimeProviderProps = {
   children: ReactNode;
-  /** Pre-constructed client. Lifecycle is the caller's responsibility —
-   *  the provider does not call ``disconnect()`` on unmount. Takes
-   *  precedence over the construction props below. */
-  client?: RealtimeClientLike;
-  /** Auth header resolver, forwarded into the provider-owned client.
-   *  Identity matters: changing it rebuilds the client. Wrap in
-   *  ``useCallback`` if the function would otherwise be recreated each
-   *  render. Ignored when ``client`` is supplied. */
-  getAuthHeaders?: RealtimeClientOptions['getAuthHeaders'];
-  /** Override the underlying transport factory for the provider-owned
-   *  client. Identity matters; memoise on the caller side. Ignored when
-   *  ``client`` is supplied. */
-  transportFactory?: RealtimeClientOptions['transportFactory'];
+  /** The run to read from — ``useRealtimeSession``'s ``session``, or your
+   *  own ``agent.start()`` result. ``null`` (or omitted) between runs;
+   *  the snapshot then reports the initial idle state. Lifecycle is the
+   *  caller's responsibility — the provider never ends the session. */
+  session?: RealtimeSession | null;
   /** Cap on transcript bubbles retained in the React snapshot. Default
    *  is 12, trading full history for bounded memory in long sessions.
    *  Pass ``Infinity`` (or a large explicit number) to keep unbounded
@@ -152,56 +114,36 @@ export type RealtimeProviderProps = {
 
 export function RealtimeProvider({
   children,
-  client,
-  getAuthHeaders,
-  transportFactory,
+  session = null,
   maxTranscriptLength = DEFAULT_MAX_TRANSCRIPT_LEN,
 }: RealtimeProviderProps) {
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
 
-  const { client: resolvedClient, ownedByProvider } = useMemo<{
-    client: RealtimeClientLike;
-    ownedByProvider: boolean;
-  }>(() => {
-    if (client) return { client, ownedByProvider: false };
-    const opts: RealtimeClientOptions = {};
-    if (getAuthHeaders) opts.getAuthHeaders = getAuthHeaders;
-    if (transportFactory) opts.transportFactory = transportFactory;
-    return { client: new RealtimeClient(opts), ownedByProvider: true };
-  }, [client, getAuthHeaders, transportFactory]);
-
-  useEffect(() => {
-    if (!ownedByProvider) return;
-    const owned = resolvedClient as unknown as RealtimeClient;
-    return () => {
-      void owned.disconnect();
-    };
-  }, [ownedByProvider, resolvedClient]);
-
   const [snapshot, setSnapshot] = useState<RealtimeSnapshotState>(() =>
-    snapshotFromClient(resolvedClient),
+    snapshotFromSession(session),
   );
 
   useEffect(() => {
-    setSnapshot(snapshotFromClient(resolvedClient));
+    setSnapshot(snapshotFromSession(session));
+    if (session === null) return;
     const unsubs: Unsubscribe[] = [];
     unsubs.push(
-      resolvedClient.on('transport_state', (next) => {
+      session.on('transport_state', (next) => {
         setSnapshot((prev) => (prev.transportState === next ? prev : { ...prev, transportState: next }));
       }),
     );
     unsubs.push(
-      resolvedClient.on('agent_state', (next) => {
+      session.on('agent_state', (next) => {
         setSnapshot((prev) => (prev.agentState === next ? prev : { ...prev, agentState: next }));
       }),
     );
     unsubs.push(
-      resolvedClient.on('media_state', (next) => {
+      session.on('media_state', (next) => {
         setSnapshot((prev) => ({ ...prev, mediaState: next }));
       }),
     );
     unsubs.push(
-      resolvedClient.on('transcript', (event) => {
+      session.on('transcript', (event) => {
         setSnapshot((prev) => ({
           ...prev,
           transcript: reduceTranscript(prev.transcript, event, maxTranscriptLength),
@@ -209,7 +151,7 @@ export function RealtimeProvider({
       }),
     );
     unsubs.push(
-      resolvedClient.on('tool_call', (event) => {
+      session.on('tool_call', (event) => {
         setSnapshot((prev) => ({
           ...prev,
           toolCalls: reduceToolCall(prev.toolCalls, event),
@@ -217,7 +159,7 @@ export function RealtimeProvider({
       }),
     );
     unsubs.push(
-      resolvedClient.on('tool_result', (event) => {
+      session.on('tool_result', (event) => {
         setSnapshot((prev) => ({
           ...prev,
           toolCalls: reduceToolResult(prev.toolCalls, event),
@@ -225,18 +167,18 @@ export function RealtimeProvider({
       }),
     );
     unsubs.push(
-      resolvedClient.on('error', (next) => {
+      session.on('error', (next) => {
         setSnapshot((prev) => (prev.error === next ? prev : { ...prev, error: next }));
       }),
     );
     return () => {
       for (const u of unsubs) u();
     };
-  }, [resolvedClient]);
+  }, [session]);
 
   const value = useMemo<RealtimeContextValue>(
-    () => ({ client: resolvedClient, audioElementRef, snapshot }),
-    [resolvedClient, snapshot],
+    () => ({ session, audioElementRef, snapshot }),
+    [session, snapshot],
   );
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>;
 }
@@ -277,8 +219,11 @@ function useRealtimeContext(): RealtimeContextValue {
   return ctx;
 }
 
-export function useRealtimeClient(): RealtimeClientLike {
-  return useRealtimeContext().client;
+/** The provider's current session, or ``null`` between runs. For
+ *  imperative calls (``sendText``, ``setMuted``, …) from components that
+ *  don't own the run themselves. */
+export function useRealtimeSessionContext(): RealtimeSession | null {
+  return useRealtimeContext().session;
 }
 
 export function useRealtimeSnapshot(): RealtimeSnapshotState {

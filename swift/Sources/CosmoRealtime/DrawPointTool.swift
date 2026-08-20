@@ -71,13 +71,13 @@ public enum DrawPointTool {
     private static func clamp01(_ v: Double) -> Double { min(1, max(0, v)) }
 }
 
-extension SessionConfig.Tool {
-    /// The point renderer, ready to add to ``SessionConfig/tools`` alongside
+extension AgentTool {
+    /// The point renderer, ready to add to ``RealtimeAgent/tools`` alongside
     /// the locator that feeds it. Same contract as
     /// ``drawBox(onDraw:)``, with a ``DrawPointRequest``.
     public static func drawPoint(
         onDraw: @escaping @MainActor @Sendable (DrawPointRequest) -> DrawOutcome
-    ) -> SessionConfig.Tool {
+    ) -> AgentTool {
         .sdkClient(SDKClientTool(
             name: DrawPointTool.name,
             description: DrawPointTool.toolDescription,

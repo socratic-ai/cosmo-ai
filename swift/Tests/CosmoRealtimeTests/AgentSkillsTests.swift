@@ -65,7 +65,7 @@ struct AgentSkillsTests {
     @Test func configPersonaAndToolsPreservedUnderSkills() async throws {
         // A skill must augment — not replace — instructions/tools the caller
         // supplied on the config.
-        let defaultTool = SessionConfig.Tool.client(
+        let defaultTool = AgentTool.client(
             name: "web_search", description: "d", parameters: ["type": .string("object")], handler: { _ in [:] }
         )
         let agent = try RealtimeAgent(skills: [hotSkill("refunds", "handle refunds")])
@@ -86,7 +86,7 @@ struct AgentSkillsTests {
 
     @Test func noSkillsAddsNoToolAndLeavesConfigUntouched() async throws {
         let agent = try RealtimeAgent(skills: [])
-        var tools: [SessionConfig.Tool]?
+        var tools: [AgentTool]?
         var instructions: String?
         let s = try await agent.start(
             config: SessionConfig(instructions: "persona"),
@@ -114,11 +114,10 @@ struct AgentSkillsTests {
     }
 
     @Test func skillsCallerToolsAndMcpAllMerge() async throws {
-        let caller = SessionConfig.Tool.client(
+        let caller = AgentTool.client(
             name: "caller", description: "d", parameters: ["type": .string("object")], handler: { _ in [:] }
         )
         let agent = try RealtimeAgent(
-            tools: [caller],
             skills: [hotSkill("refunds")],
             mcp: McpRegistry(servers: [McpStdioServer(name: "fs", command: "x")])
         )
@@ -126,7 +125,9 @@ struct AgentSkillsTests {
             FakeMCPTransport(responses: ["tools/list": #"{"tools":[{"name":"read","inputSchema":{"type":"object"}}]}"#])
         }
         var names: [String] = []
-        let session = try await agent.start(config: SessionConfig(), transportFactory: mcpFactory) { cfg in
+        let session = try await agent.start(
+            config: SessionConfig(tools: [caller]), transportFactory: mcpFactory
+        ) { cfg in
             names = self.toolNames(cfg)
             return try await self.fakeRealtime(cfg)
         }
@@ -135,13 +136,12 @@ struct AgentSkillsTests {
     }
 
     @Test func reservedNamesDropCollidingMcpTool() async throws {
-        // The reserved set (caller + skill tool names) must flow into mcp.connect:
-        // an MCP tool whose exposed name collides with a caller tool is dropped.
-        let caller = SessionConfig.Tool.client(
+        // The reserved set (config tools + skill tool names) must flow into
+        // mcp.connect: an MCP tool whose exposed name collides is dropped.
+        let caller = AgentTool.client(
             name: "mcp__fs__read", description: "d", parameters: ["type": .string("object")], handler: { _ in [:] }
         )
         let agent = try RealtimeAgent(
-            tools: [caller],
             skills: [hotSkill("refunds")],
             mcp: McpRegistry(servers: [McpStdioServer(name: "fs", command: "x")])
         )
@@ -149,7 +149,9 @@ struct AgentSkillsTests {
             FakeMCPTransport(responses: ["tools/list": #"{"tools":[{"name":"read","inputSchema":{"type":"object"}}]}"#])
         }
         var names: [String] = []
-        let s = try await agent.start(config: SessionConfig(), transportFactory: mcpFactory) { cfg in
+        let s = try await agent.start(
+            config: SessionConfig(tools: [caller]), transportFactory: mcpFactory
+        ) { cfg in
             names = self.toolNames(cfg)
             return try await self.fakeRealtime(cfg)
         }
@@ -158,9 +160,10 @@ struct AgentSkillsTests {
     }
 
     @Test func configToolReservesNameAgainstMcp() async throws {
-        // A tool on the config — not just RealtimeAgent.tools — must reserve its name
-        // so a colliding MCP tool is dropped.
-        let defaultTool = SessionConfig.Tool.client(
+        // With no skills in play there is no skill tool in the reserved set, so
+        // the config's own tool is the only thing reserving the name — and it
+        // still drops the colliding MCP tool.
+        let defaultTool = AgentTool.client(
             name: "mcp__fs__read", description: "d", parameters: ["type": .string("object")], handler: { _ in [:] }
         )
         let agent = try RealtimeAgent(mcp: McpRegistry(servers: [McpStdioServer(name: "fs", command: "x")]))
@@ -183,12 +186,14 @@ struct AgentSkillsTests {
         // The SDK's load-skill tool now lives in the reserved cosmo_sdk_
         // namespace, so a caller tool taking that name is rejected at session
         // start — it never silently drops the skills.
-        let caller = SessionConfig.Tool.client(
+        let caller = AgentTool.client(
             name: loadSkillToolName, description: "caller's own", parameters: ["type": .string("object")], handler: { _ in [:] }
         )
-        let agent = try RealtimeAgent(tools: [caller], skills: [hotSkill("refunds")])
+        let agent = try RealtimeAgent(skills: [hotSkill("refunds")])
         await #expect {
-            _ = try await agent.start(config: SessionConfig(), transportFactory: { _ in FakeMCPTransport() }) { cfg in
+            _ = try await agent.start(
+                config: SessionConfig(tools: [caller]), transportFactory: { _ in FakeMCPTransport() }
+            ) { cfg in
                 try await self.fakeRealtime(cfg)
             }
         } throws: { error in
@@ -201,14 +206,14 @@ struct AgentSkillsTests {
         // `load_skill` is now an ordinary caller name — the SDK moved its tool
         // into the reserved namespace — so a caller tool taking it is left in
         // place and the skills' own cosmo_sdk_load_skill tool and menu still attach.
-        let caller = SessionConfig.Tool.client(
+        let caller = AgentTool.client(
             name: "load_skill", description: "caller's own", parameters: ["type": .string("object")], handler: { _ in [:] }
         )
-        let agent = try RealtimeAgent(tools: [caller], skills: [hotSkill("refunds", "handle refunds")])
+        let agent = try RealtimeAgent(skills: [hotSkill("refunds", "handle refunds")])
         var names: [String] = []
         var instructions: String?
         let s = try await agent.start(
-            config: SessionConfig(instructions: "You are Alex."),
+            config: SessionConfig(instructions: "You are Alex.", tools: [caller]),
             transportFactory: { _ in FakeMCPTransport() }
         ) { cfg in
             names = self.toolNames(cfg)

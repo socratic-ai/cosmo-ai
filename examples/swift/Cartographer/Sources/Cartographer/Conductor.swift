@@ -59,22 +59,21 @@ final class Conductor: ObservableObject {
         note("connecting to Cosmo…")
 
         do {
-            // Zero-argument Options resolves COSMO_API_KEY, else the
+            // Zero-argument construction resolves COSMO_API_KEY, else the
             // `cosmo login` credentials file. A bundled app launched from
             // Finder inherits no environment, so the file is the route that
             // works there.
-            let session = try await RealtimeSession.start(
-                .init(),
-                config: SessionConfig(
-                    voice: .init(name: "Puck"),
-                    audio: .init(noiseCancellation: true),
-                    instructions: Self.instructions,
-                    tools: try mapTools(),
-                    interruptionSensitivity: .high,
-                    greeting: "Map's open. What are we thinking about?",
-                    hooks: try mapHooks()
-                )
+            let client = try RealtimeClient()
+            let agent = try client.agent(
+                instructions: Self.instructions,
+                voice: VoiceConfig(name: "Puck"),
+                audio: AudioConfig(noiseCancellation: true),
+                tools: try mapTools(),
+                interruptionSensitivity: .high,
+                greeting: "Map's open. What are we thinking about?",
+                hooks: try mapHooks()
             )
+            let session = try await agent.start()
             self.session = session
             pump = Task { [weak self] in await self?.consume(session) }
         } catch {
@@ -178,10 +177,10 @@ final class Conductor: ObservableObject {
 
     // MARK: Tools
 
-    private func mapTools() throws -> [SessionConfig.Tool] {
+    private func mapTools() throws -> [AgentTool] {
         let map = self.map
 
-        let addIdea = try SessionConfig.Tool.define(
+        let addIdea = try AgentTool.define(
             name: "add_idea",
             description: """
             Put one idea on the visible mind map. Call this the moment the \
@@ -203,7 +202,7 @@ final class Conductor: ObservableObject {
             return ["id": .string(node.id), "placed": .bool(true)]
         }
 
-        let linkIdeas = try SessionConfig.Tool.define(
+        let linkIdeas = try AgentTool.define(
             name: "link_ideas",
             description: """
             Draw a labelled connection between two ideas already on the map \
@@ -225,7 +224,7 @@ final class Conductor: ObservableObject {
             return ["linked": .bool(ok)]
         }
 
-        let readMap = try SessionConfig.Tool.define(
+        let readMap = try AgentTool.define(
             name: "read_map",
             description: """
             Read back everything currently on the map. Call before \
@@ -239,7 +238,7 @@ final class Conductor: ObservableObject {
             return ["title": .string(title), "outline": .string(outline)]
         }
 
-        let titleMap = try SessionConfig.Tool.define(
+        let titleMap = try AgentTool.define(
             name: "title_map",
             description: "Name the map once its subject is clear. Call at most once or twice.",
             input: .object(

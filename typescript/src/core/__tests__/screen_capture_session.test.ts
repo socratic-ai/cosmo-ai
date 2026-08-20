@@ -53,7 +53,9 @@ describe('screen-capture session wiring through RealtimeClient', () => {
   it('acks the capture, streams the payload, and unregisters on teardown', async () => {
     const fake = makeFakeTransport();
     const client = startableClient(fake);
-    await client.agent({ tools: [{ kind: 'screen_locate', capture }] }).start();
+    const session = await client
+      .agent({ tools: [{ kind: 'screen_locate', capture }] })
+      .start();
 
     const reply = JSON.parse(await fake.invokeRpc(CAPTURE_RPC, '{"capture_id":"c"}'));
     expect(reply).toEqual({ ok: true, result: { captured: true }, error: null });
@@ -64,7 +66,7 @@ describe('screen-capture session wiring through RealtimeClient', () => {
     expect(payload.capture_id).toBe('c');
     expect(payload.ax_elements).toHaveLength(1);
 
-    await client.disconnect();
+    await session.end();
     expect(fake.rpcMethods.size).toBe(0);
   });
 

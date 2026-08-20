@@ -43,7 +43,7 @@ const client = new RealtimeClient({});         // TypeScript (Node)
 ```
 
 ```swift
-let options = try RealtimeSession.Options()    // Swift
+let client = try RealtimeClient()              // Swift
 ```
 
 Two rules that must always hold:

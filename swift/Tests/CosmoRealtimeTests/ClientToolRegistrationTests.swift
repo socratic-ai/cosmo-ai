@@ -3,7 +3,7 @@ import Testing
 @testable import CosmoRealtime
 
 /// The advertise-vs-register matrix for client tools. A tool can be:
-///   - advertised AND RPC-handled (a normal ``SessionConfig.Tool.client`` with a handler),
+///   - advertised AND RPC-handled (a normal ``AgentTool.client`` with a handler),
 ///   - advertised but NOT handled (server-orchestrated, e.g. ``mouse_click`` → handler nil),
 ///   - RPC-handled but NOT advertised (the grounding RPCs — passed via ``rpcHandlers``).
 ///

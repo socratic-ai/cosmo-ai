@@ -15,7 +15,7 @@ actor LiveKitSessionTransport: SessionTransport {
 
     fileprivate static let log = Logger(subsystem: CosmoRealtimeLog.subsystem, category: "session-transport")
 
-    private let options: RealtimeSession.Options
+    private let options: RealtimeClient.Options
     // Accessed by the screen-share extension (deferred publish reads it)
     // and the DEBUG test hooks; the rest of the transport is the only
     // writer outside those.
@@ -76,7 +76,7 @@ actor LiveKitSessionTransport: SessionTransport {
     // down room never gets a late publish.
     nonisolated let isClosed = OSAllocatedUnfairLock<Bool>(initialState: false)
 
-    init(options: RealtimeSession.Options) {
+    init(options: RealtimeClient.Options) {
         self.options = options
         let inStream = AsyncStream<Float>.makeStream(bufferingPolicy: .bufferingNewest(1))
         self.inputLevels = inStream.stream

@@ -82,7 +82,6 @@ export type SessionEngineContext = {
   resolveAuthHeaders: () => Promise<Record<string, string>>;
   /** The session-start POST was rejected with a 401. */
   onStartUnauthorized: () => void;
-  defaultAudioElement: () => HTMLAudioElement | null;
 };
 
 function isMicPermissionDenied(err: unknown): boolean {
@@ -196,6 +195,10 @@ export class SessionEngine {
   private outputAnalyser: AnalyserNode | null = null;
   private inputAnalyserSource: MediaStreamAudioSourceNode | null = null;
   private outputAnalyserSource: MediaElementAudioSourceNode | null = null;
+  /** Element the current output tap was built from. ``createMediaElementSource``
+   *  throws if called twice for the same element, so a repeat rebuild for an
+   *  unchanged element must be a no-op. */
+  private outputAnalyserElement: HTMLAudioElement | null = null;
   private readonly inputAnalyserListeners = new Set<(a: AnalyserNode | null) => void>();
   private readonly outputAnalyserListeners = new Set<(a: AnalyserNode | null) => void>();
 
@@ -335,7 +338,6 @@ export class SessionEngine {
       throw new Error('SessionEngine.start is single-use — create a new engine.');
     }
     this.started = true;
-    this.hostAudioElement = this.context.defaultAudioElement();
     this.resetSnapshot();
     this.setLifecycle({ kind: 'connecting' });
 
@@ -744,6 +746,12 @@ export class SessionEngine {
   attachAudioElement(el: HTMLAudioElement | null): void {
     this.hostAudioElement = el;
     this.connection?.attachAudioElement(el);
+    // The host element routinely arrives AFTER the connect — a React host
+    // mounts it on a later render — and the transport swaps its fallback for
+    // it. Rebuild the side-tap against whatever is playing now; leaving it on
+    // whatever existed when the connect finished is how the output level
+    // silently reads zero for a whole call.
+    this.refreshOutputAnalyser();
   }
 
   /** Register a transport-level RPC method handler the server invokes via
@@ -1417,22 +1425,49 @@ export class SessionEngine {
         this.inputAnalyserSource = src;
         this.setInputAnalyser(an);
       }
-      const output = local.getOutputAudioElement();
-      if (output) {
-        const src = ctx.createMediaElementSource(output);
+    } catch (err) {
+      log.warn('[voice] analyser setup failed (non-fatal)', err);
+    }
+    this.refreshOutputAnalyser();
+  }
+
+  /** Point the output side-tap at the transport's current audio element.
+   *
+   * Runs at connect and again whenever the element changes, because the host
+   * element is often attached later than the connect and the transport may
+   * have been playing through its own fallback until then. A no-op when the
+   * element is unchanged — ``createMediaElementSource`` throws on a second
+   * call for the same element. */
+  private refreshOutputAnalyser(): void {
+    const local = this.connection;
+    if (local === null) return;
+    const element = local.getOutputAudioElement();
+    if (element === this.outputAnalyserElement) return;
+    try {
+      if (this.outputAnalyserSource) {
+        this.outputAnalyserSource.disconnect();
+        this.outputAnalyserSource = null;
+      }
+      this.outputAnalyserElement = element;
+      if (element === null) {
+        this.setOutputAnalyser(null);
+      } else {
+        const ctx = this.analyserContext ?? new AudioContext();
+        this.analyserContext = ctx;
+        const src = ctx.createMediaElementSource(element);
         const an = ctx.createAnalyser();
         an.fftSize = 256;
-        // The output side-tap must ALSO re-connect to destination so the
-        // audio keeps audibly playing — createMediaElementSource diverts
-        // the element's output into the graph. Without `connect(destination)`
-        // the user would hear nothing.
+        // The side-tap must ALSO re-connect to destination so the audio keeps
+        // audibly playing — createMediaElementSource diverts the element's
+        // output into the graph. Without `connect(destination)` the user
+        // would hear nothing.
         src.connect(an);
         src.connect(ctx.destination);
         this.outputAnalyserSource = src;
         this.setOutputAnalyser(an);
       }
     } catch (err) {
-      log.warn('[voice] analyser setup failed (non-fatal)', err);
+      log.warn('[voice] output analyser setup failed (non-fatal)', err);
     }
     if (this.emitter.listenerCount('volume') > 0) {
       this.stopVolumeLoop();
@@ -1524,6 +1559,7 @@ export class SessionEngine {
       try { this.outputAnalyserSource.disconnect(); } catch { /* ignore */ }
       this.outputAnalyserSource = null;
     }
+    this.outputAnalyserElement = null;
     if (this.analyserContext) {
       try {
         await this.analyserContext.close();

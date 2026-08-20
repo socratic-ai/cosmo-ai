@@ -101,7 +101,7 @@ struct DrawRequestDecodeError: Error, LocalizedError {
 }
 
 /// Decode an SDK-shipped tool's schema literal into the typed parameters
-/// ``SessionConfig/Tool/client(name:description:parameters:handler:)``
+/// ``AgentTool/client(name:description:parameters:handler:)``
 /// carries. The literals are compile-time constants pinned by
 /// ``ClientToolSchemaDialectTests``, so a decode failure is a programmer
 /// error, not a runtime condition.
@@ -110,8 +110,8 @@ func sdkToolParameters(fromJSON json: String) -> [String: JSONValue] {
     try! JSONDecoder().decode([String: JSONValue].self, from: Data(json.utf8))
 }
 
-extension SessionConfig.Tool {
-    /// The box renderer, ready to add to ``SessionConfig/tools`` alongside
+extension AgentTool {
+    /// The box renderer, ready to add to ``RealtimeAgent/tools`` alongside
     /// the locator that feeds it:
     ///
     /// ```swift
@@ -134,7 +134,7 @@ extension SessionConfig.Tool {
     /// reaching your code.
     public static func drawBox(
         onDraw: @escaping @MainActor @Sendable (DrawBoxRequest) -> DrawOutcome
-    ) -> SessionConfig.Tool {
+    ) -> AgentTool {
         .sdkClient(SDKClientTool(
             name: DrawBoxTool.name,
             description: DrawBoxTool.toolDescription,

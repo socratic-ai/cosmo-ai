@@ -12,7 +12,7 @@ struct SessionConnectTimingsTests {
 
     private func makeTransport() -> LiveKitSessionTransport {
         LiveKitSessionTransport(
-            options: RealtimeSession.Options(
+            options: RealtimeClient.Options(
                 apiKey: "test-key"
             )
         )

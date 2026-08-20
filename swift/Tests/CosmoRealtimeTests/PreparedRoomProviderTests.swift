@@ -13,11 +13,11 @@ struct PreparedRoomProviderTests {
 
     private struct StubProvider: PreparedRoomProviding {
         let room: PreparedRoom
-        func takePreparedRoom(for options: RealtimeSession.Options) -> PreparedRoom? { room }
+        func takePreparedRoom(for options: RealtimeClient.Options) -> PreparedRoom? { room }
     }
 
-    private static func makeOptions() -> RealtimeSession.Options {
-        RealtimeSession.Options(
+    private static func makeOptions() -> RealtimeClient.Options {
+        RealtimeClient.Options(
             credential: .apiKey("key"), baseURL: URL(string: "https://api.example.com")!
         )
     }

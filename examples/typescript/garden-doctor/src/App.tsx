@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { CosmoRealtimeProvider, SessionBusyError, TokenSource, useRealtimeSession } from 'cosmo-ai';
+import { RealtimeProvider, SessionBusyError, TokenSource, useRealtimeSession } from 'cosmo-ai';
 
 import { gardenDoctorAgent } from './agent';
 import { useCamera } from './camera/use_camera';
@@ -44,7 +44,7 @@ export function App() {
   // The hook owns the session lifecycle: a single-use client per run, the
   // mic released before the next start, every exit path funnelled into one
   // teardown. The camera stays this app's job.
-  const { phase, client, start, end, error, warning, endedReason } = useRealtimeSession({
+  const { phase, session, start, end, error, warning, endedReason } = useRealtimeSession({
     makeAgent: (c) => c.agent(gardenDoctorAgent()),
     // Hosted: the box held a password, traded for short-lived end-user tokens
     // by this deployment's /token Function — TokenSource keeps one fresh.
@@ -98,7 +98,7 @@ export function App() {
 
   if (phase === 'live') {
     return (
-      <CosmoRealtimeProvider client={client}>
+      <RealtimeProvider session={session}>
         <LiveView
           stream={camera.stream}
           mirrored={camera.facingMode === 'user'}
@@ -107,7 +107,7 @@ export function App() {
           onEnd={() => void end()}
           warning={warning ?? cameraWarning}
         />
-      </CosmoRealtimeProvider>
+      </RealtimeProvider>
     );
   }
 

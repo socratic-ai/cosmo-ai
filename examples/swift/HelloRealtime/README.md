@@ -5,7 +5,7 @@ executables, each a headless live proof of one surface:
 
 | Target | Shows |
 |---|---|
-| `HelloRealtime` | The core session loop: `RealtimeSession.start`, one typed client tool, and the event stream drained to the terminal. |
+| `HelloRealtime` | The core session loop: `client.agent(...)` then `agent.start()`, one typed client tool, and the event stream drained to the terminal. |
 | `BackgroundToolExample` | A blocking client tool and a background one side by side: `defineBackground` acks through its `ClientToolJob`, the agent keeps talking, and the result arrives when the work finishes. |
 | `HooksExample` | All four hooks in one session: inject context at session start, deny one tool, rewrite another's arguments, observe every outcome. |
 | `MCPExample` | Tools from a local stdio MCP server — loads `mcp.json` (override with `COSMO_MCP_CONFIG`) and watches the model call `mcp__<server>__<tool>`. Needs Node for `npx`. |

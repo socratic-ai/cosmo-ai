@@ -3,7 +3,7 @@
 import { log } from '../../core/logger';
 import { useEffect, useRef } from 'react';
 
-import { useRealtimeAudioElementRef, useRealtimeClient } from '../RealtimeProvider';
+import { useRealtimeAudioElementRef, useRealtimeSessionContext } from '../RealtimeProvider';
 
 export type RealtimeAudioProps = {
   /** Fired when the browser refuses to auto-play (HTMLMediaElement.play
@@ -22,18 +22,18 @@ export type RealtimeAudioProps = {
  * transport never reaches outside its boundary.
  */
 export function RealtimeAudio({ onError }: RealtimeAudioProps) {
-  const client = useRealtimeClient();
+  const session = useRealtimeSessionContext();
   const providerAudioRef = useRealtimeAudioElementRef();
   const ref = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    client.attachAudioElement(el);
+    if (!el || session === null) return;
+    session.attachAudioElement(el);
     return () => {
-      client.attachAudioElement(null);
+      session.attachAudioElement(null);
     };
-  }, [client]);
+  }, [session]);
 
   useEffect(() => {
     providerAudioRef.current = ref.current;
@@ -62,19 +62,19 @@ export function RealtimeAudio({ onError }: RealtimeAudioProps) {
   // transitions when the user clicks "Tap to enable".
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || session === null) return;
     const tryPlay = (): void => {
       const result = el.play();
       if (result === undefined) return;
       result.catch((err) => {
         log.warn('[realtime] audio autoplay blocked', err);
-        client.setOutputBlocked(true);
+        session.setOutputBlocked(true);
         onError?.(err);
       });
     };
-    const onPlaying = (): void => client.setOutputBlocked(false);
+    const onPlaying = (): void => session.setOutputBlocked(false);
     const onPause = (): void => {
-      if (el.srcObject && el.paused) client.setOutputBlocked(true);
+      if (el.srcObject && el.paused) session.setOutputBlocked(true);
     };
     const onLoadedMetadata = (): void => tryPlay();
     el.addEventListener('loadedmetadata', onLoadedMetadata);
@@ -89,7 +89,7 @@ export function RealtimeAudio({ onError }: RealtimeAudioProps) {
       el.removeEventListener('playing', onPlaying);
       el.removeEventListener('pause', onPause);
     };
-  }, [client, onError]);
+  }, [session, onError]);
 
   return <audio ref={ref} autoPlay style={{ display: 'none' }} />;
 }

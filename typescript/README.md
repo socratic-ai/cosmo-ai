@@ -28,7 +28,7 @@ installs them automatically; with yarn or pnpm run
 > **Beta.** `cosmo-ai` is pre-1.0: minor releases may contain breaking
 > changes, noted in the
 > [changelog](https://platform.askcosmo.ai/docs/meta/changelog). Pin a
-> minor (`"cosmo-ai": "~0.5.1"`) if
+> minor (`"cosmo-ai": "~0.6.0"`) if
 > you need stability. We will cut 1.0 once the session, tool, and React
 > APIs have gone several releases without breaking changes.
 
@@ -399,14 +399,18 @@ preflight rejection shows up.
 
 ## React usage
 
-```tsx
-import { CosmoRealtimeProvider, useTranscript } from 'cosmo-ai';
+The provider is fed one live run — pass it the `RealtimeSession` from
+`agent.start()` (or from the `useRealtimeSession` hook), and `null`
+between runs:
 
-function App() {
+```tsx
+import { RealtimeProvider, useTranscript, type RealtimeSession } from 'cosmo-ai';
+
+function App({ session }: { session: RealtimeSession | null }) {
   return (
-    <CosmoRealtimeProvider client={client}>
+    <RealtimeProvider session={session}>
       <Transcript />
-    </CosmoRealtimeProvider>
+    </RealtimeProvider>
   );
 }
 
@@ -522,7 +526,7 @@ const { dialId } = await session.dial('+14155550199'); // bring the callee in ov
 | Hook | Description |
 |---|---|
 | `useRealtimeSession()` | Session lifecycle: a single-use client per run, `start`/`end`, one teardown on every exit path (used above the provider) |
-| `useRealtimeClient()` | Access the `RealtimeClient` from context |
+| `useRealtimeSessionContext()` | Access the provider's `RealtimeSession` (`null` between runs) from context |
 | `useTransportState()` | LiveKit transport connection state |
 | `useAgentState()` | Cosmo agent lifecycle state |
 | `useTranscript()` | Array of transcript items (user + agent turns) |

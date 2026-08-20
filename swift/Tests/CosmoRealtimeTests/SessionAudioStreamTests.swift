@@ -16,7 +16,7 @@ struct SessionAudioStreamTests {
 
     private func makeTransport() -> LiveKitSessionTransport {
         LiveKitSessionTransport(
-            options: RealtimeSession.Options(apiKey: "test-key")
+            options: RealtimeClient.Options(apiKey: "test-key")
         )
     }
 

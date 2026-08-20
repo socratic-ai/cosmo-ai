@@ -4,7 +4,7 @@ import {
   MicToggle,
   RealtimeAudio,
   StartAudio,
-  useRealtimeClient,
+  useRealtimeSessionContext,
   useTransportState,
 } from 'cosmo-ai';
 
@@ -21,7 +21,7 @@ type Props = {
 
 export function LiveView({ store, warning, onEnd }: Props) {
   const transport = useTransportState();
-  const client = useRealtimeClient();
+  const session = useRealtimeSessionContext();
   const [micWarning, setMicWarning] = useState<string | null>(null);
 
   const game = useSyncExternalStore(
@@ -39,24 +39,24 @@ export function LiveView({ store, warning, onEnd }: Props) {
       if (Number.isNaN(index) || team === undefined) return;
       const locked = store.setBuzzed(team.name);
       if (locked === null) return;
-      client
-        .sendContext(
+      session
+        ?.sendContext(
           `[buzzer] ${locked} buzzed first — the buzzers are locked until clear_buzzer.`,
         )
         .catch((err) => console.error('[party-game-night] buzz context failed', err));
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [store, client]);
+  }, [store, session]);
 
   const onBoardEvent = useCallback(
     (event: string) => {
       if (event !== 'prompt-timer-finished') return;
-      client
-        .sendContext('[board] The acting timer just ran out — call the round.')
+      session
+        ?.sendContext('[board] The acting timer just ran out — call the round.')
         .catch((err) => console.error('[party-game-night] board context failed', err));
     },
-    [client],
+    [session],
   );
 
   const buzzersOpen = game.stage?.kind === 'quiz' && game.stage.buzzed === null;

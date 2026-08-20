@@ -7,6 +7,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { RealtimeClient } from '../realtime_client';
+import type { RealtimeSession } from '../session';
 import { makeFakeTransport, type FakeTransport } from './test_helpers';
 import type { UsageEvent } from '../events';
 import type { RealtimeServerMessage } from '../../transport/envelope';
@@ -18,18 +19,18 @@ function emitRawRole(fake: FakeTransport, frame: Record<string, unknown>): void 
   fake.emitMessage(frame as unknown as RealtimeServerMessage);
 }
 
-async function connectedSession(): Promise<{ fake: FakeTransport; client: RealtimeClient }> {
+async function connectedSession(): Promise<{ fake: FakeTransport; session: RealtimeSession }> {
   const fake = makeFakeTransport();
   const client = new RealtimeClient({ transportFactory: () => fake });
-  await client.agent().start();
-  return { fake, client };
+  const session = await client.agent().start();
+  return { fake, session };
 }
 
 describe('cosmo.usage', () => {
   it('surfaces token counts instead of dropping the frame', async () => {
-    const { fake, client } = await connectedSession();
+    const { fake, session } = await connectedSession();
     const seen: UsageEvent[] = [];
-    client.on('usage', (u) => seen.push(u));
+    session.on('usage', (u) => seen.push(u));
 
     fake.emitMessage({
       type: 'cosmo.usage',
@@ -49,9 +50,9 @@ describe('cosmo.usage', () => {
   });
 
   it('reports each event as a cumulative total, not a delta', async () => {
-    const { fake, client } = await connectedSession();
+    const { fake, session } = await connectedSession();
     const seen: UsageEvent[] = [];
-    client.on('usage', (u) => seen.push(u));
+    session.on('usage', (u) => seen.push(u));
 
     fake.emitMessage({ type: 'cosmo.usage', total_tokens: 10 });
     fake.emitMessage({ type: 'cosmo.usage', total_tokens: 25 });
@@ -62,9 +63,9 @@ describe('cosmo.usage', () => {
 
 describe('transcript role normalization', () => {
   it('accepts the wire casing and any other casing', async () => {
-    const { fake, client } = await connectedSession();
+    const { fake, session } = await connectedSession();
     const roles: string[] = [];
-    client.on('transcript', (t) => roles.push(t.role));
+    session.on('transcript', (t) => roles.push(t.role));
 
     for (const role of ['USER', 'user', 'ASSISTANT', 'Assistant']) {
       emitRawRole(fake, { type: 'transcript', role, text: 'x', is_final: true });
@@ -74,9 +75,9 @@ describe('transcript role normalization', () => {
   });
 
   it('drops an unknown role rather than filing it under assistant', async () => {
-    const { fake, client } = await connectedSession();
+    const { fake, session } = await connectedSession();
     const seen: string[] = [];
-    client.on('transcript', (t) => seen.push(t.role));
+    session.on('transcript', (t) => seen.push(t.role));
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     emitRawRole(fake, { type: 'transcript', role: 'NARRATOR', text: 'x', is_final: true });
@@ -87,9 +88,9 @@ describe('transcript role normalization', () => {
   });
 
   it('drops a turn-complete with an unknown role', async () => {
-    const { fake, client } = await connectedSession();
+    const { fake, session } = await connectedSession();
     const seen: string[] = [];
-    client.on('turn_complete', (t) => seen.push(t.role));
+    session.on('turn_complete', (t) => seen.push(t.role));
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     emitRawRole(fake, { type: 'turn-complete', role: 'NARRATOR' });

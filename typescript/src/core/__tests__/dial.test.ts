@@ -9,6 +9,7 @@ if (typeof global.TextDecoder === 'undefined') {
 }
 
 import { RealtimeClient } from '../realtime_client';
+import type { RealtimeSession } from '../session';
 import { NotReadyError } from '../types';
 import { DialError } from '../../transport/dial';
 import type { RealtimeConnectOptions, RealtimeTransport } from '../../transport/types';
@@ -74,7 +75,7 @@ function errorResponse(status: number, body: unknown): Response {
 const BASE_URL = 'https://api.example.com';
 const NUMBER = '+14155550199';
 
-describe('RealtimeClient.dial', () => {
+describe('RealtimeSession.dial', () => {
   let fetchMock: Mock;
 
   beforeEach(() => {
@@ -82,24 +83,23 @@ describe('RealtimeClient.dial', () => {
     global.fetch = fetchMock as unknown as typeof fetch;
   });
 
-  async function connectedClient(
+  async function connectedSession(
     options: ConstructorParameters<typeof RealtimeClient>[0] = {},
-  ): Promise<RealtimeClient> {
+  ): Promise<RealtimeSession> {
     const client = new RealtimeClient({
       transportFactory: () => makeFakeTransport(),
       ...options,
     });
-    await client.agent().start();
-    return client;
+    return client.agent().start();
   }
 
   it('POSTs to the baseUrl-composed dial URL with auth headers + body and returns dialId', async () => {
     fetchMock.mockResolvedValue(okResponse({ dial_id: 'dial-789' }));
-    const client = await connectedClient({
+    const session = await connectedSession({
       getAuthHeaders: () => ({ Authorization: 'Bearer tok' }),
     });
 
-    const result = await client.dial(NUMBER);
+    const result = await session.dial(NUMBER);
 
     expect(result).toEqual({ dialId: 'dial-789' });
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -115,9 +115,9 @@ describe('RealtimeClient.dial', () => {
 
   it('includes caller_number in the body when a caller-ID is passed', async () => {
     fetchMock.mockResolvedValue(okResponse({ dial_id: 'dial-cid' }));
-    const client = await connectedClient({});
+    const session = await connectedSession({});
 
-    await client.dial(NUMBER, '+12139458610');
+    await session.dial(NUMBER, '+12139458610');
 
     expect(JSON.parse(fetchMock.mock.calls[0][1].body)).toEqual({
       phone_number: NUMBER,
@@ -126,9 +126,9 @@ describe('RealtimeClient.dial', () => {
   });
 
   it('fast-fails a malformed caller-ID locally without hitting the network', async () => {
-    const client = await connectedClient({});
+    const session = await connectedSession({});
 
-    await expect(client.dial(NUMBER, '1234')).rejects.toMatchObject({
+    await expect(session.dial(NUMBER, '1234')).rejects.toMatchObject({
       code: 'invalid_phone_number',
     });
     expect(fetchMock).not.toHaveBeenCalled();
@@ -136,11 +136,11 @@ describe('RealtimeClient.dial', () => {
 
   it('awaits an async getAuthHeaders and applies the resolved headers', async () => {
     fetchMock.mockResolvedValue(okResponse({ dial_id: 'dial-async' }));
-    const client = await connectedClient({
+    const session = await connectedSession({
       getAuthHeaders: async () => ({ Authorization: 'Bearer async-tok' }),
     });
 
-    const result = await client.dial(NUMBER);
+    const result = await session.dial(NUMBER);
 
     expect(result).toEqual({ dialId: 'dial-async' });
     expect(fetchMock.mock.calls[0][1].headers).toMatchObject({
@@ -151,9 +151,9 @@ describe('RealtimeClient.dial', () => {
 
   it('maps a network failure to DialError(transport_error)', async () => {
     fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
-    const client = await connectedClient({});
+    const session = await connectedSession({});
 
-    const err = await client.dial(NUMBER).catch((e: unknown) => e);
+    const err = await session.dial(NUMBER).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(DialError);
     expect((err as DialError).code).toBe('transport_error');
     expect((err as DialError).message).toBe('Failed to fetch');
@@ -161,9 +161,9 @@ describe('RealtimeClient.dial', () => {
   });
 
   it('fast-fails a malformed number locally without hitting the network', async () => {
-    const client = await connectedClient({});
+    const session = await connectedSession({});
 
-    await expect(client.dial('1234')).rejects.toMatchObject({
+    await expect(session.dial('1234')).rejects.toMatchObject({
       code: 'invalid_phone_number',
     });
     expect(fetchMock).not.toHaveBeenCalled();
@@ -175,9 +175,9 @@ describe('RealtimeClient.dial', () => {
         error: { type: 'api_error', message: { code: 'phone_calls_disabled', message: 'Not enabled.' } },
       }),
     );
-    const client = await connectedClient({});
+    const session = await connectedSession({});
 
-    const err = await client.dial(NUMBER).catch((e: unknown) => e);
+    const err = await session.dial(NUMBER).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(DialError);
     expect((err as DialError).code).toBe('phone_calls_disabled');
     expect((err as DialError).message).toBe('Not enabled.');
@@ -187,30 +187,24 @@ describe('RealtimeClient.dial', () => {
     fetchMock.mockResolvedValue(
       errorResponse(409, { detail: { code: 'session_not_live', message: 'Session has ended.' } }),
     );
-    const client = await connectedClient({});
+    const session = await connectedSession({});
 
-    await expect(client.dial(NUMBER)).rejects.toMatchObject({ code: 'session_not_live' });
+    await expect(session.dial(NUMBER)).rejects.toMatchObject({ code: 'session_not_live' });
   });
 
   it('raises invalid_response when a 200 body is missing dial_id', async () => {
     fetchMock.mockResolvedValue(okResponse({ unexpected: true }));
-    const client = await connectedClient({});
+    const session = await connectedSession({});
 
-    await expect(client.dial(NUMBER)).rejects.toMatchObject({ code: 'invalid_response' });
+    await expect(session.dial(NUMBER)).rejects.toMatchObject({ code: 'invalid_response' });
   });
 
-  it('throws NotReadyError when no session has started', async () => {
-    const client = new RealtimeClient({});
-
-    await expect(client.dial(NUMBER)).rejects.toBeInstanceOf(NotReadyError);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
-
-  it('clears the session id on disconnect so a later dial is not_ready', async () => {
+  it('clears the session id on end so a later dial is not_ready', async () => {
     fetchMock.mockResolvedValue(okResponse({ dial_id: 'dial-1' }));
-    const client = await connectedClient({});
-    await client.disconnect();
+    const session = await connectedSession({});
+    await session.end();
 
-    await expect(client.dial(NUMBER)).rejects.toBeInstanceOf(NotReadyError);
+    await expect(session.dial(NUMBER)).rejects.toBeInstanceOf(NotReadyError);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

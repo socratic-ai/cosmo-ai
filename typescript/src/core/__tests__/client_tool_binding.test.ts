@@ -112,7 +112,7 @@ describe('client-tool binding through agent.start()', () => {
     ]);
   });
 
-  it('disconnect closes the job sink — a late terminal result is dropped', async () => {
+  it('end closes the job sink — a late terminal result is dropped', async () => {
     const fake = makeFakeTransport();
     const client = makeClient(fake);
     let release!: () => void;
@@ -123,7 +123,7 @@ describe('client-tool binding through agent.start()', () => {
     const done = new Promise<void>((resolve) => {
       finished = resolve;
     });
-    await client
+    const session = await client
       .agent({
         tools: [
           {
@@ -144,16 +144,16 @@ describe('client-tool binding through agent.start()', () => {
       .start();
 
     await fake.invokeRpc('export_report', '{}');
-    await client.disconnect();
+    await session.end();
     release();
     await done;
     expect(fake.sent.filter((m) => m.type === 'tool_job_result')).toHaveLength(0);
   });
 
-  it('disconnect unregisters the RPC methods installed at start', async () => {
+  it('end unregisters the RPC methods installed at start', async () => {
     const fake = makeFakeTransport();
     const client = makeClient(fake);
-    await client
+    const session = await client
       .agent({
         tools: [
           {
@@ -167,7 +167,7 @@ describe('client-tool binding through agent.start()', () => {
       })
       .start();
     expect([...fake.rpcMethods.keys()]).toEqual(['runnable']);
-    await client.disconnect();
+    await session.end();
     expect(fake.rpcMethods.size).toBe(0);
   });
 

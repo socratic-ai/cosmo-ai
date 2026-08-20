@@ -66,7 +66,7 @@ pages), defaulting to `https://platform.askcosmo.ai`.
   job handle, acks to release the reply so the agent can keep talking,
   and delivers the outcome later — `@tool(background=True)` (Python),
   `tool({ background: true, ... })` (TypeScript),
-  `SessionConfig.Tool.defineBackground` (Swift). Same declaration, same
+  `AgentTool.defineBackground` (Swift). Same declaration, same
   wire shape; the handler signature is the whole difference. Reach for it
   before wrapping a slow tool in a timeout or splitting it into a poll.
 - **A declared tool with no handler and no server execution is rejected**,

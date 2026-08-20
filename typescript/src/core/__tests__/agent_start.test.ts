@@ -129,9 +129,9 @@ describe('RealtimeAgent.start → session-config body', () => {
   it('parses the resolved-agent echo off the ready frame', async () => {
     const fake = makeFakeTransport();
     const client = new RealtimeClient({ transportFactory: () => fake });
-    await client.catalogAgent('driver-pay').start();
+    const session = await client.catalogAgent('driver-pay').start();
     const readyEvents: unknown[] = [];
-    client.on('ready', (e) => readyEvents.push(e));
+    session.on('ready', (e) => readyEvents.push(e));
 
     fake.emitMessage({
       type: 'ready',
@@ -149,9 +149,9 @@ describe('RealtimeAgent.start → session-config body', () => {
   it('reports a null resolved agent for an inline-agent ready frame', async () => {
     const fake = makeFakeTransport();
     const client = new RealtimeClient({ transportFactory: () => fake });
-    await client.agent({ voice: 'Puck' }).start();
+    const session = await client.agent({ voice: 'Puck' }).start();
     const readyEvents: unknown[] = [];
-    client.on('ready', (e) => readyEvents.push(e));
+    session.on('ready', (e) => readyEvents.push(e));
 
     fake.emitMessage({ type: 'ready', session_id: 'sess-1' });
 
@@ -187,11 +187,10 @@ describe('RealtimeAgent.start → session-config body', () => {
     });
     const client = new RealtimeClient({ transportFactory: () => fake });
 
-    expect(client.getConnectTimings()).toBeNull();
     const session = await client.agent().start();
 
-    expect(client.getSessionId()).toBe('sess-7');
-    const timings = client.getConnectTimings();
+    expect(session.sessionId).toBe('sess-7');
+    const timings = session.connectTimings;
     expect(timings?.serverTimings?.total_ms).toBe(7);
     expect(timings?.serverTimings?.version_check_ms).toBe(1);
     // Absent on a backend predating the resolved flow, even when the
@@ -200,9 +199,6 @@ describe('RealtimeAgent.start → session-config body', () => {
     // The real phase computation is pinned in the transport's own suite
     // (``transport/__tests__/session_start.test.ts``); these values come from
     // the fake, so only the plumbing is under test here.
-    // The session and the client-level mirror expose the same values.
-    expect(session.sessionId).toBe('sess-7');
-    expect(session.connectTimings?.serverTimings?.total_ms).toBe(7);
   });
 
   it('freezes the resolved persona', () => {
@@ -223,7 +219,6 @@ describe('RealtimeAgent.start → session-config body', () => {
     void (() => client.agent({ name: 'driver-pay' }));
     // @ts-expect-error — a catalog launch requires the name argument
     void (() => client.catalogAgent());
-    expect(client.isActive()).toBe(false);
   });
 
   it('agents open independent sessions differing in a persona knob', async () => {
@@ -344,8 +339,11 @@ describe('sendActivityEnd', () => {
   });
 
   it('rejects when the session is not live', async () => {
-    const client = new RealtimeClient({ transportFactory: () => makeFakeTransport() });
+    const fake = makeFakeTransport();
+    const client = new RealtimeClient({ transportFactory: () => fake });
+    const session = await client.agent().start();
+    await session.end();
 
-    await expect(client.sendActivityEnd()).rejects.toBeInstanceOf(NotReadyError);
+    await expect(session.sendActivityEnd()).rejects.toBeInstanceOf(NotReadyError);
   });
 });

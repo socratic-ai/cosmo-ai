@@ -24,17 +24,22 @@ or the mobile app, then give the matching two-step flow. Ask one question at a
 time and keep replies short.
 """
 let skills = [try parseSkillMd(skillMarkdown, defaultName: "activate-card")]
-let agent = try RealtimeAgent(skills: skills)
 
 print("== resident menu (appended to instructions) ==")
 print(skillsMenuText(skills))
 print("==============================================\n")
 
-let options = try RealtimeSession.Options()
-let config = SessionConfig(instructions: "You are Alex, a concise phone support agent.")
+let options = try RealtimeClient.Options()
+let client = RealtimeClient(options)
+// Skills fold into the persona: the menu above rides resident in the
+// instructions, and `cosmo_sdk_load_skill` joins the tool set at start.
+let agent = try client.agent(
+    instructions: "You are Alex, a concise phone support agent.",
+    skills: skills
+)
 
 print("connecting to \(options.baseURL.absoluteString)…")
-let session = try await agent.start(options, config: config, micMuted: true)
+let session = try await agent.start(micMuted: true)
 
 let pump = Task {
     do {

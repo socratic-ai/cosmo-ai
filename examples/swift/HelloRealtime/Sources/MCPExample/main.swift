@@ -25,14 +25,18 @@ guard FileManager.default.fileExists(atPath: configURL.path) else {
 
 print("== loading MCP servers from \(configURL.path) ==")
 let registry = try McpRegistry.fromConfigFile(configURL)
-let agent = try RealtimeAgent(mcp: registry)
 
-let options = try RealtimeSession.Options()
-let config = SessionConfig(
-    instructions: "You are a concise assistant. When a tool can answer, call it.")
+let options = try RealtimeClient.Options()
+let client = RealtimeClient(options)
+// The registry rides the agent: its servers are connected at `start`, and the
+// session owns them from there — ending it tears the subprocesses down.
+let agent = try client.agent(
+    instructions: "You are a concise assistant. When a tool can answer, call it.",
+    mcp: registry
+)
 
 print("connecting to \(options.baseURL.absoluteString) (spawning MCP subprocess)…")
-let session = try await agent.start(options, config: config, micMuted: true)
+let session = try await agent.start(micMuted: true)
 
 var sawMcpCall = false
 let pump = Task {

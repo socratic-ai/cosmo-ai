@@ -12,15 +12,14 @@ Swift 5.9+. That is the SDK's floor; an individual example may declare a
 higher one of its own (Cartographer targets macOS 14).
 
 ```swift
-// Zero-argument Options resolves COSMO_API_KEY, else the `cosmo login`
+// Zero-argument client resolves COSMO_API_KEY, else the `cosmo login`
 // credentials file; throws CredentialsError when nothing usable resolves.
-let session = try await RealtimeSession.start(
-    try RealtimeSession.Options(),
-    config: SessionConfig(
-        voice: .init(name: "Puck"),
-        instructions: "You are terse."
-    )
+let client = try RealtimeClient()
+let agent = try client.agent(
+    instructions: "You are terse.",
+    voice: .init(name: "Puck")
 )
+let session = try await agent.start()
 
 for try await event in session.events {
     switch event {
@@ -34,8 +33,11 @@ for try await event in session.events {
 ## Gotchas
 
 - **The module is `CosmoRealtime`; the package resolves as `CosmoAI`.**
-  There is no client object: `RealtimeSession.start(_:config:)` takes
-  `Options` + `SessionConfig`; `session.events` is the typed stream.
+  Three objects, same as the other SDKs: `RealtimeClient` holds the
+  credential, `client.agent(...)` builds the reusable persona
+  (instructions, voice, tools, greeting, skills, mcp, hooks),
+  `agent.start()` returns the one live run; `session.events` is the
+  typed stream.
 - **`baseURL` is not an `Options` argument.** It resolves from
   `COSMO_BASE_URL` and is exposed read-only. A GUI app has no inherited
   environment — publish the choice with `setenv` before starting a
@@ -43,9 +45,10 @@ for try await event in session.events {
 - **Minting is deliberately absent from `CosmoRealtime`** — a shipped app
   can't mint. Server-side Swift that mints imports the opt-in
   `CosmoRealtimeMint` product.
-- **Tools**: `SessionConfig.Tool.define(...)` with a trailing handler
-  closure; the returned object is the tool result.
-- **Slow tools**: `SessionConfig.Tool.defineBackground(...)`. The closure
+- **Tools**: `AgentTool.define(...)` with a trailing handler closure,
+  passed to `client.agent(tools:)`; the returned object is the tool
+  result.
+- **Slow tools**: `AgentTool.defineBackground(...)`. The closure
   takes `(args, job: ClientToolJob)` and returns `Void` — `await
   job.ack("on it")` releases the reply so the agent keeps talking, then
   `try await job.complete(result:summary:)` or `try await

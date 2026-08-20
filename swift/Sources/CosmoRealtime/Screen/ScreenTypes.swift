@@ -197,7 +197,7 @@ public struct ScreenCaptureRequest: Sendable, Equatable {
     }
 }
 
-/// Thrown by a ``SessionConfig/Tool/screenLocate(capture:)`` handler when the
+/// Thrown by a ``AgentTool/screenLocate(capture:)`` handler when the
 /// screen can't be captured for a benign reason (call ended, sharing off). The
 /// SDK maps it to `captured:false` + the message; any other error surfaces as a
 /// tool error.
@@ -226,7 +226,7 @@ struct ScreenToolError: Error, LocalizedError {
 /// (capped at ``maxEntries``) so concurrent captures don't evict each other.
 public final class ScreenCaptureCache: @unchecked Sendable {
     /// Every screen tool a host wires shares this one, which is what lets a
-    /// handle minted during ``SessionConfig/Tool/screenLocate(capture:)`` resolve
+    /// handle minted during ``AgentTool/screenLocate(capture:)`` resolve
     /// inside a renderer declared separately. Capture ids are server-minted per
     /// capture, so entries never collide; ``maxAge`` and ``maxEntries`` bound it.
     public static let shared = ScreenCaptureCache()

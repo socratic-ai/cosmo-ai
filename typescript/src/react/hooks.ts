@@ -3,12 +3,11 @@
  * (transport / agent / media) plus the transcript and tool-call
  * streams.
  *
- * Imperative entry points (start / end / sendText / setMicMuted /
- * attachAudioElement) live on the client returned by
- * ``useRealtimeClient`` — these hooks are purely for reading. Each
- * hook is backed by the provider's React snapshot derived from the
- * ``RealtimeClient`` event stream, so the SDK has no app-internal
- * state dependency.
+ * Imperative entry points (start / end / sendText / setMuted /
+ * attachAudioElement) live on the ``RealtimeSession`` — these hooks are
+ * purely for reading. Each hook is backed by the provider's React
+ * snapshot derived from the session's event stream, so the SDK has no
+ * app-internal state dependency.
  */
 
 import { useEffect, useState } from 'react';
@@ -17,7 +16,7 @@ import type { AgentState, MediaState, TransportState } from '../core/state';
 import type { ErrorEvent } from '../core/types';
 
 import {
-  useRealtimeClient,
+  useRealtimeSessionContext,
   useRealtimeSnapshot,
   type RealtimeToolCallItem,
   type RealtimeTranscriptItem,
@@ -63,17 +62,18 @@ export function useRealtimeError(): ErrorEvent | null {
 }
 
 function useVolumeChannel(channel: 'mic' | 'output'): number {
-  const client = useRealtimeClient();
+  const session = useRealtimeSessionContext();
   const [level, setLevel] = useState<number>(0);
   useEffect(() => {
-    const unsub = client.on('volume', (e) => {
+    if (session === null) return;
+    const unsub = session.on('volume', (e) => {
       setLevel(channel === 'mic' ? e.mic : e.output);
     });
     return () => {
       unsub();
       setLevel(0);
     };
-  }, [client, channel]);
+  }, [session, channel]);
   return level;
 }
 

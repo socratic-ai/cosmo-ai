@@ -21,8 +21,8 @@ private let weatherInput = ToolSchema.object(
     required: ["city"]
 )
 
-private func weatherTool() throws -> SessionConfig.Tool {
-    try SessionConfig.Tool.define(
+private func weatherTool() throws -> AgentTool {
+    try AgentTool.define(
         name: "get_weather",
         description: "Current weather for a city.",
         input: weatherInput
@@ -34,12 +34,12 @@ private func weatherTool() throws -> SessionConfig.Tool {
     }
 }
 
-private func clientHandler(_ tool: SessionConfig.Tool) -> ClientToolHandler? {
+private func clientHandler(_ tool: AgentTool) -> ClientToolHandler? {
     if case let .client(_, _, _, handler) = tool { return handler }
     return nil
 }
 
-@Suite("Tool.define builder")
+@Suite("AgentTool.define builder")
 struct ToolBuilderTests {
 
     // MARK: - Lowering
@@ -50,7 +50,7 @@ struct ToolBuilderTests {
         // Ground truth written by hand — not the builder's own output — so the
         // equality pins that define lowers to exactly this declaration
         // (Tool.== ignores handlers, matching the wire).
-        let handWritten = SessionConfig.Tool.client(
+        let handWritten = AgentTool.client(
             name: "get_weather",
             description: "Current weather for a city.",
             parameters: [
@@ -73,14 +73,14 @@ struct ToolBuilderTests {
 
     @Test("defineBackground lowers to the equivalent backgroundClient spec")
     func backgroundLowersToBackgroundClient() throws {
-        let defined = try SessionConfig.Tool.defineBackground(
+        let defined = try AgentTool.defineBackground(
             name: "export_weather",
             description: "Slow weather export.",
             input: weatherInput
         ) { (_: WeatherArgs, job: ClientToolJob) in
             await job.ack()
         }
-        let handWritten = SessionConfig.Tool.backgroundClient(
+        let handWritten = AgentTool.backgroundClient(
             name: "export_weather",
             description: "Slow weather export.",
             parameters: [
@@ -202,7 +202,7 @@ struct ToolBuilderTests {
 
     @Test("nested paths are dotted and indexed")
     func nestedPathsDottedAndIndexed() async throws {
-        let tool = try SessionConfig.Tool.define(
+        let tool = try AgentTool.define(
             name: "place_order",
             description: "Place an order.",
             input: .object(
@@ -277,7 +277,7 @@ struct ToolBuilderTests {
     @Test("a background handler receives decoded args and the job")
     func backgroundHandlerReceivesArgsAndJob() async throws {
         let seenCity = CaptureBox<String>()
-        let tool = try SessionConfig.Tool.defineBackground(
+        let tool = try AgentTool.defineBackground(
             name: "export_weather",
             description: "Slow weather export.",
             input: weatherInput
@@ -307,7 +307,7 @@ struct ToolBuilderTests {
     @Test("a bad tool name is rejected at construction")
     func badNameRejected() {
         #expect(throws: ToolDefinitionError.self) {
-            _ = try SessionConfig.Tool.define(
+            _ = try AgentTool.define(
                 name: "GetWeather", description: "Camel case.", input: weatherInput
             ) { (_: WeatherArgs) in [:] }
         }
@@ -316,7 +316,7 @@ struct ToolBuilderTests {
     @Test("a missing description is rejected at construction")
     func missingDescriptionRejected() {
         #expect(throws: ToolDefinitionError.self) {
-            _ = try SessionConfig.Tool.define(
+            _ = try AgentTool.define(
                 name: "get_weather", description: "", input: weatherInput
             ) { (_: WeatherArgs) in [:] }
         }
@@ -325,7 +325,7 @@ struct ToolBuilderTests {
     @Test("an overlong description reports actual and max lengths")
     func overlongDescriptionReportsActualAndMax() {
         do {
-            _ = try SessionConfig.Tool.define(
+            _ = try AgentTool.define(
                 name: "get_weather",
                 description: String(repeating: "x", count: 2049),
                 input: weatherInput
@@ -342,7 +342,7 @@ struct ToolBuilderTests {
     @Test("a control character in the description is rejected")
     func controlCharacterDescriptionRejected() {
         #expect(throws: ToolDefinitionError.self) {
-            _ = try SessionConfig.Tool.define(
+            _ = try AgentTool.define(
                 name: "get_weather", description: "bad\u{07}text", input: weatherInput
             ) { (_: WeatherArgs) in [:] }
         }
@@ -353,7 +353,7 @@ struct ToolBuilderTests {
         var schema = ToolSchema.string()
         for _ in 0..<6 { schema = .object(properties: ["p": schema]) }
         do {
-            _ = try SessionConfig.Tool.define(
+            _ = try AgentTool.define(
                 name: "deep_tool", description: "Too deep.", input: schema
             ) { (_: WeatherArgs) in [:] }
             Issue.record("expected a schema error")
@@ -366,7 +366,7 @@ struct ToolBuilderTests {
         var atLimit = ToolSchema.string()
         for _ in 0..<5 { atLimit = .object(properties: ["p": atLimit]) }
         #expect(throws: Never.self) {
-            _ = try SessionConfig.Tool.define(
+            _ = try AgentTool.define(
                 name: "deep_tool", description: "At the limit.", input: atLimit
             ) { (_: WeatherArgs) in [:] }
         }
@@ -380,7 +380,7 @@ struct ToolBuilderTests {
             )
         )
         do {
-            _ = try SessionConfig.Tool.define(
+            _ = try AgentTool.define(
                 name: "wide_tool", description: "Too wide.", input: wide
             ) { (_: WeatherArgs) in [:] }
             Issue.record("expected a schema error")

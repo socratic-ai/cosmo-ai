@@ -456,12 +456,18 @@ export type GeminiModelOptions = {
 };
 
 /**
- * xAI Grok Voice model knobs — untunable today, like the OpenAI mini
- * tier; turn-taking knobs will follow ``OpenAIModelOptions``'s
- * shape once exposed on the build path.
+ * xAI Grok Voice model knobs. Grok pins its own sampling and token
+ * limits, so only turn-taking is tunable here.
+ *
+ * Grok runs one detector — a fixed silence window — so the two knobs below
+ * always apply. Naming any other detector is rejected at session start
+ * rather than silently downgraded.
  */
 export type GrokModelOptions = {
+    prefix_padding_ms?: number;
     provider?: 'grok';
+    silence_duration_ms?: number;
+    turn_detection?: TurnDetectionMode;
 };
 
 /**

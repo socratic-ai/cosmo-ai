@@ -5,7 +5,7 @@ TypeScript SDK for Cosmo voice sessions.
 
 ## What it shows
 
-- `CosmoRealtimeProvider` wrapping a manually constructed `RealtimeClient`
+- `RealtimeProvider` wrapping a manually constructed `RealtimeClient`
 - `RealtimeAudio` for automatic audio output binding
 - `MicToggle` for push-to-talk / mute control
 - `useTranscript()` rendering a live turn-by-turn transcript stream

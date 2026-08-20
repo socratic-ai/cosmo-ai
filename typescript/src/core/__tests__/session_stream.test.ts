@@ -175,11 +175,9 @@ describe('RealtimeSession stream', () => {
 
     const events = await drain(session);
     expect(events).toEqual([{ type: 'session-ended', reason: 'client ended' }]);
-    // Latched: the engine machine resets to idle for the next run, but this
-    // session stays disconnected forever.
+    // Latched: this session stays disconnected forever.
     expect(session.state.kind).toBe('disconnected');
     expect(session.state.disconnectReason).toBe('client_ended');
-    expect(client.getLifecycleState()).toEqual({ kind: 'idle' });
   });
 
   it('drops overflow past the queue bound but still delivers the terminal item', async () => {
@@ -229,10 +227,13 @@ describe('RealtimeSession stream', () => {
       }),
     });
     const client = new RealtimeClient({ transportFactory: () => fake });
+    const states: SessionLifecycleState[] = [];
 
-    await expect(client.agent().start()).rejects.toBeInstanceOf(SessionStartError);
+    await expect(
+      client.agent().start({ onStateChange: (state) => states.push(state) }),
+    ).rejects.toBeInstanceOf(SessionStartError);
 
-    expect(client.getLifecycleState()).toMatchObject({
+    expect(states[states.length - 1]).toMatchObject({
       kind: 'disconnected',
       disconnectReason: 'handshake_failed',
       detail: 'not allowed',
@@ -241,17 +242,20 @@ describe('RealtimeSession stream', () => {
 });
 
 describe('session lifecycle machine', () => {
-  it('walks connecting → connected ↔ reconnecting → disconnected(client_ended) → idle', async () => {
+  it('walks connecting → connected ↔ reconnecting → disconnected(client_ended)', async () => {
     const fake = makeFakeTransport();
     const client = new RealtimeClient({ transportFactory: () => fake });
     const states: SessionLifecycleState[] = [];
-    client.on('lifecycle', (state) => states.push(state));
 
-    const session = await client.agent().start();
+    const session = await client
+      .agent()
+      .start({ onStateChange: (state) => states.push(state) });
     fake.emitReconnecting();
     fake.emitReconnected();
     await session.end();
 
+    // The callback stops at this run's terminal state — it never observes
+    // the engine machine settling back to idle after teardown.
     expect(states.map((state) => state.kind)).toEqual([
       'idle', // current state, replayed on subscribe
       'connecting',
@@ -259,7 +263,6 @@ describe('session lifecycle machine', () => {
       'reconnecting',
       'connected',
       'disconnected',
-      'idle',
     ]);
     expect(states[5]).toEqual({ kind: 'disconnected', disconnectReason: 'client_ended' });
     expect(session.state).toEqual({
@@ -270,9 +273,9 @@ describe('session lifecycle machine', () => {
 
   it('maps an unsolicited transport close to transport_error with detail', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
-    const { client, session, fake } = await startSession();
+    const { session, fake } = await startSession();
     const states: SessionLifecycleState[] = [];
-    client.on('lifecycle', (state) => states.push(state));
+    session.on('lifecycle', (state) => states.push(state));
 
     fake.emitClose({ reason: 'livekit:ICE failed' });
     // The close handler awaits the Stop hooks before the terminal
@@ -301,10 +304,10 @@ describe('send wire shapes', () => {
   });
 
   it('sendContext publishes a send-context frame and emits nothing locally', async () => {
-    const { client, session, fake } = await startSession();
+    const { session, fake } = await startSession();
     fake.emitMessage(READY_FRAME);
     const echoed: string[] = [];
-    client.on('transcript', (event) => echoed.push(event.text));
+    session.on('transcript', (event) => echoed.push(event.text));
 
     await session.sendContext('now on References (section 6 of 7).');
     await session.sendContext('   ');
@@ -316,10 +319,10 @@ describe('send wire shapes', () => {
   });
 
   it('sendText with transcript:false publishes the turn without echoing it locally', async () => {
-    const { client, session, fake } = await startSession();
+    const { session, fake } = await startSession();
     fake.emitMessage(READY_FRAME);
     const echoed: string[] = [];
-    client.on('transcript', (event) => echoed.push(event.text));
+    session.on('transcript', (event) => echoed.push(event.text));
 
     await session.sendText('[reading] now on References', { transcript: false });
     await session.sendText('shown');

@@ -37,7 +37,7 @@ package protocol PreparedRoomProviding: Sendable {
     /// there is none, or the one held does not match this connect's backend,
     /// credential, or freshness policy. Destructive: a prepared room is handed
     /// out at most once, and a rejected one is dropped rather than kept.
-    func takePreparedRoom(for options: RealtimeSession.Options) -> PreparedRoom?
+    func takePreparedRoom(for options: RealtimeClient.Options) -> PreparedRoom?
 }
 
 extension RealtimeSession {

@@ -335,14 +335,14 @@ struct TokenSourceSessionStartTests {
     }
 
     private func startRejectedSession(
-        credential: RealtimeSession.Options.Credential, status: Int
+        credential: RealtimeClient.Options.Credential, status: Int
     ) async throws {
         let transport = FakeSessionTransport()
         await transport.scriptRejection(
             .rejected(status: status, code: nil, detail: "rejected")
         )
         let session = RealtimeSession(
-            transport: transport, options: RealtimeSession.Options(credential: credential)
+            transport: transport, options: RealtimeClient.Options(credential: credential)
         )
         await #expect(throws: RealtimeSessionError.self) {
             try await session._start(config: SessionConfig())
@@ -380,7 +380,7 @@ struct TokenSourceSessionStartTests {
         await transport.scriptRejection(.credential(mintError))
         let session = RealtimeSession(
             transport: transport,
-            options: RealtimeSession.Options(tokenSource: .custom { throw mintError })
+            options: RealtimeClient.Options(tokenSource: .custom { throw mintError })
         )
         await #expect(throws: mintError) {
             try await session._start(config: SessionConfig())
@@ -394,7 +394,7 @@ struct TokenSourceSessionStartTests {
         let client = CosmoRealtimeAPI.Client(
             serverURL: URL(string: "https://api.example.com")!,
             transport: StubTransport { jsonResponse(.ok, "{}") },
-            middlewares: RealtimeSession.Options(tokenSource: source)._apiMiddlewares(prepared: nil)
+            middlewares: RealtimeClient.Options(tokenSource: source)._apiMiddlewares(prepared: nil)
         )
         do {
             _ = try await client.verifyRealtimeCredential()

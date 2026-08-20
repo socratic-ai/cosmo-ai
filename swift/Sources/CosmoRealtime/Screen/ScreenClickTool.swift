@@ -22,7 +22,7 @@ public struct ScreenClickRequest: Sendable {
     }
 }
 
-/// What a ``SessionConfig/Tool/screenClickElement(onClick:)`` handler reports
+/// What a ``AgentTool/screenClickElement(onClick:)`` handler reports
 /// back to the model.
 ///
 /// Clicking can fail for reasons the model must hear about — the user switched
@@ -123,8 +123,8 @@ public enum ScreenClickTool {
     }
 }
 
-extension SessionConfig.Tool {
-    /// The click renderer, ready to add to ``SessionConfig/tools`` alongside the
+extension AgentTool {
+    /// The click renderer, ready to add to ``RealtimeAgent/tools`` alongside the
     /// ``screenLocate(capture:)`` slot that feeds it:
     ///
     /// ```swift
@@ -145,7 +145,7 @@ extension SessionConfig.Tool {
     /// cannot produce would be acting blind.
     public static func screenClickElement(
         onClick: @escaping @Sendable (ScreenClickRequest) async throws -> ScreenClickOutcome
-    ) -> SessionConfig.Tool {
+    ) -> AgentTool {
         screenClickElement(cache: .shared, onClick: onClick)
     }
 
@@ -153,7 +153,7 @@ extension SessionConfig.Tool {
     static func screenClickElement(
         cache: ScreenCaptureCache,
         onClick: @escaping @Sendable (ScreenClickRequest) async throws -> ScreenClickOutcome
-    ) -> SessionConfig.Tool {
+    ) -> AgentTool {
         .sdkClient(SDKClientTool(
             name: ScreenClickTool.name,
             description: ScreenClickTool.toolDescription,

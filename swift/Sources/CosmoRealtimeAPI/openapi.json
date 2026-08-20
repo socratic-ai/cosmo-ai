@@ -752,12 +752,25 @@
       },
       "GrokModelOptions": {
         "additionalProperties": false,
-        "description": "xAI Grok Voice model knobs \u2014 untunable today, like the OpenAI mini\ntier; turn-taking knobs will follow ``OpenAIModelOptions``'s\nshape once exposed on the build path.",
+        "description": "xAI Grok Voice model knobs. Grok pins its own sampling and token\nlimits, so only turn-taking is tunable here.\n\nGrok runs one detector \u2014 a fixed silence window \u2014 so the two knobs below\nalways apply. Naming any other detector is rejected at session start\nrather than silently downgraded.",
         "properties": {
+          "prefix_padding_ms": {
+            "maximum": 5000.0,
+            "minimum": 0.0,
+            "type": "integer"
+          },
           "provider": {
             "const": "grok",
             "default": "grok",
             "type": "string"
+          },
+          "silence_duration_ms": {
+            "maximum": 5000.0,
+            "minimum": 0.0,
+            "type": "integer"
+          },
+          "turn_detection": {
+            "$ref": "#/components/schemas/TurnDetectionMode"
           }
         },
         "title": "GrokModelOptions",

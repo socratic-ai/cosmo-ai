@@ -96,8 +96,8 @@ func mcpResultObject(from result: MCPCallResult) throws -> [String: JSONValue] {
 func buildMCPTools(
     _ servers: [BuiltServer],
     reservedNames: Set<String>
-) -> (tools: [SessionConfig.Tool], skipped: [SkippedTool]) {
-    var tools: [SessionConfig.Tool] = []
+) -> (tools: [AgentTool], skipped: [SkippedTool]) {
+    var tools: [AgentTool] = []
     var skipped: [SkippedTool] = []
     var used = reservedNames
     let budget = mcpMaxToolCount - reservedNames.count

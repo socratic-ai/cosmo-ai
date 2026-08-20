@@ -4,13 +4,13 @@ import Foundation
 /// built from `.object` / `.string` / `.number` / `.integer` / `.boolean` /
 /// `.array` / `.enum` / `.anyOf` / `.null` nodes. Each node carries only the
 /// attributes the backend's restricted dialect accepts (`description`,
-/// `default`, bounds), so a ``SessionConfig/Tool/define(name:description:input:handler:)``
+/// `default`, bounds), so a ``AgentTool/define(name:description:input:handler:)``
 /// schema can only fail the dialect check on the caps (depth ≤ 6, ≤ 64
 /// properties globally) or on text sanitization.
 ///
 /// `default` and the bounds (`minimum` / `maximum` / `minLength` /
 /// `maxLength`) are model guidance only — decoding does not apply or enforce
-/// them (see ``SessionConfig/Tool/define(name:description:input:handler:)``).
+/// them (see ``AgentTool/define(name:description:input:handler:)``).
 public struct ToolSchema: Sendable, Equatable {
     indirect enum Node: Sendable, Equatable {
         case object(properties: [String: ToolSchema], required: [String], description: String?)

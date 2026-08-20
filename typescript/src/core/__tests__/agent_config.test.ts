@@ -154,6 +154,29 @@ describe('buildAgentSessionConfig', () => {
     });
   });
 
+  it('maps the Grok silence window onto the wire', () => {
+    const config = buildAgentSessionConfig(
+      {
+        modelOptions: {
+          provider: 'grok',
+          turnDetection: 'server_vad',
+          silenceDurationMs: 200,
+          prefixPaddingMs: 100,
+        },
+      },
+      {},
+    );
+    expect(config.agent).toEqual({
+      type: 'inline',
+      model_options: {
+        provider: 'grok',
+        turn_detection: 'server_vad',
+        silence_duration_ms: 200,
+        prefix_padding_ms: 100,
+      },
+    });
+  });
+
   it('leaves an unconfigured OpenAI block at the bare discriminator', () => {
     const config = buildAgentSessionConfig({ modelOptions: { provider: 'openai' } }, {});
     expect(config.agent).toEqual({

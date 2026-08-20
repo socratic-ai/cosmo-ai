@@ -118,6 +118,14 @@ const DEFAULT_ENDED_REASON: Record<DisconnectReason, string> = {
   transport_error: 'transport error',
 };
 
+/** @internal — see ``RealtimeSession._internal`` for usage notes. */
+export type RealtimeSessionInternal = {
+  getInputAnalyser: () => AnalyserNode | null;
+  getOutputAnalyser: () => AnalyserNode | null;
+  subscribeInputAnalyser: (cb: (a: AnalyserNode | null) => void) => Unsubscribe;
+  subscribeOutputAnalyser: (cb: (a: AnalyserNode | null) => void) => Unsubscribe;
+};
+
 export class RealtimeSession implements AsyncIterable<RealtimeSessionEvent> {
   private readonly engine: SessionEngine;
   private readonly queue: RealtimeSessionEvent[] = [];
@@ -139,9 +147,13 @@ export class RealtimeSession implements AsyncIterable<RealtimeSessionEvent> {
   private ownSessionId: string | null = null;
   private readonly unsubscribers: Unsubscribe[] = [];
 
-  /** @internal — construct via ``RealtimeAgent.start()``. */
-  constructor(engine: SessionEngine) {
+  /** @internal — construct via ``RealtimeAgent.start()``. ``stateUnsub``
+   *  is the caller's ``onStateChange`` subscription; the session owns it so
+   *  the callback stops at this run's terminal state instead of observing
+   *  the engine settle back to ``idle`` after teardown. */
+  constructor(engine: SessionEngine, stateUnsub: Unsubscribe | null = null) {
     this.engine = engine;
+    if (stateUnsub !== null) this.unsubscribers.push(stateUnsub);
     this.unsubscribers.push(
       engine.subscribeWireMessages((message) => {
         this.onWireMessage(message);
@@ -242,8 +254,15 @@ export class RealtimeSession implements AsyncIterable<RealtimeSessionEvent> {
     return this.engine.sendText(content, options);
   }
 
-  /** Give the agent context without asking it anything — no turn, no
-   *  speech, no transcript entry. See ``RealtimeClient.sendContext``. */
+  /** Give the agent context without asking it anything.
+   *
+   *  The note lands in the model's context for its next reply and never
+   *  becomes a turn of its own: no spoken response, no assistant message,
+   *  no interruption of what the agent is saying. Nothing is added to the
+   *  transcript either — the user didn't say this.
+   *
+   *  For live application state — scroll position, selection, current
+   *  record, form values. ``sendText`` is the opposite: it asks. */
   sendContext(content: string): Promise<void> {
     return this.engine.sendContext(content);
   }
@@ -261,8 +280,12 @@ export class RealtimeSession implements AsyncIterable<RealtimeSessionEvent> {
     return this.engine.sendActivityEnd();
   }
 
-  dial(phoneNumber: string): Promise<DialResult> {
-    return this.engine.dial(phoneNumber);
+  /** Place an outbound phone call into this session's room. Throws
+   *  ``DialError`` for a malformed number (validated locally, before any
+   *  request) or a server rejection. ``callerNumber`` selects the caller id
+   *  when the workspace has more than one number provisioned. */
+  dial(phoneNumber: string, callerNumber?: string): Promise<DialResult> {
+    return this.engine.dial(phoneNumber, callerNumber);
   }
 
   /** Fetch this session's usage summary: duration, talk time, and token
@@ -344,6 +367,43 @@ export class RealtimeSession implements AsyncIterable<RealtimeSessionEvent> {
   resumeAudioPlayback(): Promise<void> {
     return this.engine.resumeAudioPlayback();
   }
+
+  /** Mark the remote-audio output as blocked (browser refused autoplay)
+   *  or unblocked (a user gesture has caused ``play()`` to succeed).
+   *  Called by ``<RealtimeAudio />`` from its own ``play``/``pause``
+   *  listeners — the SDK's own state machine doesn't observe the audio
+   *  element directly, so the React primitive that owns the element is
+   *  the source of truth for autoplay status. */
+  setOutputBlocked(blocked: boolean): void {
+    this.engine.setOutputBlocked(blocked);
+  }
+
+  /** Snapshot whether fresh frames are flowing into the model's vision
+   *  input. Looks across every published video track (screen-share AND
+   *  camera) and picks the most informative answer the model can act on.
+   *  Returned shape mirrors the wire output of the desktop adapter's
+   *  ``get_current_screen`` tool so the dispatcher can pass it straight
+   *  through to the model. */
+  getVisionInputStatus(): { captured: boolean; message: string } {
+    return this.engine.getVisionInputStatus();
+  }
+
+  // ─── Internal hatch ────────────────────────────────────────────────────
+  //
+  // Raw ``AnalyserNode`` access for waveform UIs. The public surface for
+  // audio levels is the ``volume`` event, which carries RMS — enough for a
+  // meter, but not for the frequency-domain draw a waveform needs, which is
+  // why this hatch exists. Marked ``@internal`` so external consumers know
+  // not to depend on it, and bundled into one object so the published
+  // ``RealtimeSession`` type keeps a narrow surface. Session-scoped: the
+  // analysers belong to this run's engine and go with it.
+  /** @internal */
+  readonly _internal: RealtimeSessionInternal = {
+    getInputAnalyser: () => this.engine.getInputAnalyser(),
+    getOutputAnalyser: () => this.engine.getOutputAnalyser(),
+    subscribeInputAnalyser: (cb) => this.engine.subscribeInputAnalyser(cb),
+    subscribeOutputAnalyser: (cb) => this.engine.subscribeOutputAnalyser(cb),
+  };
 
   // ── Internals: stream plumbing ───────────────────────────────────────
 

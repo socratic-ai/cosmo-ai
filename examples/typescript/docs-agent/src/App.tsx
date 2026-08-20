@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  CosmoRealtimeProvider,
+  RealtimeProvider,
   RealtimeClient,
   TokenSource,
   type RealtimeClientOptions,
+  type RealtimeSession,
 } from 'cosmo-ai';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 
@@ -212,13 +213,13 @@ export function App() {
   const [apiKey, setApiKey] = useState(API_KEY_DEFAULT);
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [client, setClient] = useState<RealtimeClient | null>(null);
+  const [session, setSession] = useState<RealtimeSession | null>(null);
 
   // The tools read through this ref, so scrolling and selecting never require
   // restarting the session.
   const stateRef = useRef<StateRef>({ current: null });
   const selectionRef = useRef<string | null>(null);
-  const clientRef = useRef<RealtimeClient | null>(null);
+  const sessionRef = useRef<RealtimeSession | null>(null);
 
   useEffect(() => {
     stateRef.current.current = open
@@ -230,7 +231,7 @@ export function App() {
   // first section is skipped: the greeting already covers where we start.
   const lastNotified = useRef<number>(0);
   useEffect(() => {
-    const live = clientRef.current;
+    const live = sessionRef.current;
     if (!live || !open || sectionIndex === lastNotified.current) return;
     lastNotified.current = sectionIndex;
     const section = open.doc.sections[sectionIndex];
@@ -253,8 +254,8 @@ export function App() {
       selectionRef.current = next;
       const state = stateRef.current.current;
       if (state) state.view.selection = next;
-      if (next && clientRef.current) {
-        void clientRef.current.sendContext(selectionNote(next)).catch(() => {});
+      if (next && sessionRef.current) {
+        void sessionRef.current.sendContext(selectionNote(next)).catch(() => {});
       }
     };
     document.addEventListener('mouseup', capture);
@@ -276,17 +277,17 @@ export function App() {
       ? { token: TokenSource.endpoint('/token', { headers: () => mintHeaders(apiKey) }) }
       : { apiKey };
     try {
-      const c = new RealtimeClient(opts);
-      await c
+      const client = new RealtimeClient(opts);
+      const started = await client
         .agent({
           instructions: buildInstructions(open.doc),
           greeting: greetingFor(open.doc),
           tools: makeDocumentTools(stateRef.current),
         })
         .start();
-      clientRef.current = c;
+      sessionRef.current = started;
       lastNotified.current = sectionIndex;
-      setClient(c);
+      setSession(started);
     } catch (err) {
       setError(
         err instanceof Error && /401|invalid/i.test(err.message)
@@ -301,16 +302,16 @@ export function App() {
   }, [open, apiKey, sectionIndex]);
 
   const handleEnd = useCallback(() => {
-    clientRef.current = null;
-    setClient(null);
+    sessionRef.current = null;
+    setSession(null);
   }, []);
 
-  // A new document means a new session: SDK clients are single-attempt, so
-  // the old one is closed and dropped rather than reused.
+  // A new document means a new session: sessions are single-run, so the old
+  // one is ended and dropped rather than reused.
   const handleClose = useCallback(() => {
-    void clientRef.current?.disconnect();
-    clientRef.current = null;
-    setClient(null);
+    void sessionRef.current?.end();
+    sessionRef.current = null;
+    setSession(null);
     setOpen(null);
     setSectionIndex(0);
     lastNotified.current = 0;
@@ -358,10 +359,10 @@ export function App() {
             <HtmlViewer blocks={open.blocks} onSectionChange={setSectionIndex} />
           )}
 
-          {client ? (
-            <CosmoRealtimeProvider client={client} maxTranscriptLength={80}>
+          {session ? (
+            <RealtimeProvider session={session} maxTranscriptLength={80}>
               <AgentPanel onEnd={handleEnd} />
-            </CosmoRealtimeProvider>
+            </RealtimeProvider>
           ) : (
             <aside className="panel">
               <div className="panel-intro">

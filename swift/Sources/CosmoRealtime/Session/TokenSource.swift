@@ -7,7 +7,7 @@ import os
 /// after 24 hours. A ``TokenSource`` closes the gap: it knows how to fetch a
 /// fresh ``MintedToken`` from the developer's own backend, caches it in
 /// memory, and re-fetches when the cached token nears expiry — so options
-/// built with ``RealtimeSession/Options/init(tokenSource:connectTimeout:requestTimeout:verifyTLS:)``
+/// built with ``RealtimeClient/Options/init(tokenSource:baseURL:connectTimeout:requestTimeout:verifyTLS:)``
 /// stay valid for the life of the process with no refresh code in the app.
 ///
 /// The session asks the source for a JWT whenever a request needs auth; the

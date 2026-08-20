@@ -17,7 +17,7 @@ public enum ClientToolReply {
     /// had to shorten. Its value is `{note, kept_bytes, original_bytes}` —
     /// ``truncationMarkerNote`` plus the serialized size of the result that
     /// shipped and of the one the handler returned. Under the
-    /// ``SessionConfig/sdkToolNamePrefix`` namespace, so it cannot collide
+    /// ``AgentTool/sdkToolNamePrefix`` namespace, so it cannot collide
     /// with a key of the caller's own.
     public static let truncationMarkerKey = "cosmo_sdk_truncated"
 

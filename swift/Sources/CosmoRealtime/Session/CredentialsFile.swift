@@ -2,7 +2,7 @@ import Foundation
 
 /// Zero-argument credential resolution.
 ///
-/// ``RealtimeSession/Options/init(connectTimeout:requestTimeout:verifyTLS:)``
+/// ``RealtimeClient/Options/init(connectTimeout:requestTimeout:verifyTLS:)``
 /// resolves an API key from, in order: `COSMO_API_KEY` in the environment,
 /// then the `cosmo login` credentials file (`COSMO_CREDENTIALS_FILE` or
 /// `~/.cosmo/credentials`) at the profile named by `COSMO_PROFILE`. The

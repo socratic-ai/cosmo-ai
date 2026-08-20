@@ -9,7 +9,7 @@ import Foundation
 /// Declaring it is what turns the locator on: a config carrying one emits
 /// `{kind: "screen_locate"}` and the server offers `cosmo_screen_locate` for
 /// the session. There is no public initializer — construct it through
-/// ``SessionConfig/Tool/screenLocate(capture:)``.
+/// ``AgentTool/screenLocate(capture:)``.
 public final class ScreenLocateTool: @unchecked Sendable {
     /// Server→client RPC method the locator calls; a rename is a wire break.
     public static let rpcMethod = "screen_capture"
@@ -154,8 +154,8 @@ public final class ScreenLocateTool: @unchecked Sendable {
     }
 }
 
-extension SessionConfig.Tool {
-    /// The screen the agent may look at, ready to add to ``SessionConfig/tools``
+extension AgentTool {
+    /// The screen the agent may look at, ready to add to ``RealtimeAgent/tools``
     /// alongside the renderers that act on what it finds:
     ///
     /// ```swift
@@ -174,7 +174,7 @@ extension SessionConfig.Tool {
     /// ``ScreenCaptureUnavailable`` to decline one benignly.
     public static func screenLocate(
         capture: @escaping ScreenLocateTool.Handler
-    ) -> SessionConfig.Tool {
+    ) -> AgentTool {
         screenLocate(cache: .shared) { _ in try await capture() }
     }
 
@@ -185,7 +185,7 @@ extension SessionConfig.Tool {
     /// ``screenLocate(capture:)``.
     public static func screenLocate(
         capture: @escaping ScreenLocateTool.RequestHandler
-    ) -> SessionConfig.Tool {
+    ) -> AgentTool {
         screenLocate(cache: .shared, capture: capture)
     }
 
@@ -193,14 +193,14 @@ extension SessionConfig.Tool {
     static func screenLocate(
         cache: ScreenCaptureCache,
         capture: @escaping ScreenLocateTool.RequestHandler
-    ) -> SessionConfig.Tool {
+    ) -> AgentTool {
         .screenLocate(ScreenLocateTool(cache: cache, onCapture: capture))
     }
 
     static func screenLocate(
         cache: ScreenCaptureCache,
         capture: @escaping ScreenLocateTool.Handler
-    ) -> SessionConfig.Tool {
+    ) -> AgentTool {
         screenLocate(cache: cache) { _ in try await capture() }
     }
 }

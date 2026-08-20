@@ -5,14 +5,14 @@ import OpenAPIRuntime
 import os
 
 /// A live realtime voice session speaking the published developer
-/// protocol. One call starts it; consumption is a single typed event
-/// stream:
+/// protocol. An agent's
+/// ``RealtimeAgent/start(resumeSessionId:maxSessionSeconds:storeRecording:storeAudio:storeTranscript:storeVideo:micMuted:rpcHandlers:)``
+/// opens it; consumption is a single typed event stream:
 ///
 /// ```swift
-/// let session = try await RealtimeSession.start(
-///     .init(apiKey: "key"),
-///     config: SessionConfig(instructions: "You are a terse assistant.")
-/// )
+/// let client = RealtimeClient(.init(apiKey: "key"))
+/// let agent = try client.agent(instructions: "You are a terse assistant.")
+/// let session = try await agent.start()
 /// for try await event in session.events {
 ///     switch event {
 ///     case .ready(let ready): print("live, session:", ready.sessionId)
@@ -39,7 +39,7 @@ public actor RealtimeSession {
 
     /// Package version, sent as the SDK identity on every Cosmo REST call
     /// and on the ``session-config`` start payload.
-    public static let sdkVersion = "0.6.0"
+    public static let sdkVersion = "0.7.0"
 
     /// The ``X-Cosmo-SDK`` header value carried on every Cosmo REST call.
     static let sdkIdentityHeaderValue = "\(sdkName)/\(sdkVersion)"
@@ -68,202 +68,10 @@ public actor RealtimeSession {
 
     // MARK: Options
 
-    /// Client-level settings: credentials, endpoints, and timeouts.
-    public struct Options: Sendable {
-        /// The session credential. Exactly one form, chosen at construction.
-        public enum Credential: Sendable, Equatable, CustomStringConvertible, CustomDebugStringConvertible {
-            /// Workspace-scoped key — server-side only. Opens sessions and
-            /// can mint end-user tokens. Never embed this in a distributed
-            /// client.
-            case apiKey(String)
-            /// A minted per-user JWT — scoped to one external user, safe to
-            /// embed in a device or browser. Opens sessions but cannot mint.
-            case token(String)
-            /// A ``TokenSource`` that fetches — and keeps fresh — a minted
-            /// per-user JWT itself, so a distributed app never handles
-            /// refresh. Opens sessions but cannot mint.
-            case tokenSource(TokenSource)
+    /// The client-level settings, spelled ``RealtimeClient/Options``
+    /// publicly; session code keeps the short name.
+    typealias Options = RealtimeClient.Options
 
-            /// The bearer value sent on the ``Authorization`` header — for a
-            /// ``tokenSource(_:)`` credential, the source's current JWT
-            /// (fetched or refreshed as needed).
-            func bearerToken() async throws -> String {
-                switch self {
-                case .apiKey(let v), .token(let v): return v
-                case .tokenSource(let source): return try await source.jwt()
-                }
-            }
-
-            public static func == (lhs: Credential, rhs: Credential) -> Bool {
-                switch (lhs, rhs) {
-                case (.apiKey(let l), .apiKey(let r)): return l == r
-                case (.token(let l), .token(let r)): return l == r
-                case (.tokenSource(let l), .tokenSource(let r)): return l === r
-                default: return false
-                }
-            }
-
-            public var description: String {
-                switch self {
-                case .apiKey: return "Credential.apiKey(•••)"
-                case .token: return "Credential.token(•••)"
-                case .tokenSource: return "Credential.tokenSource(•••)"
-                }
-            }
-            public var debugDescription: String { description }
-        }
-
-        public var credential: Credential
-        /// The Cosmo API origin: the `baseURL` passed at construction, else
-        /// `COSMO_BASE_URL`, else production. Fixed once the options are
-        /// built, so one session talks to one backend and a stored
-        /// credential cannot be sent somewhere it was not issued for.
-        public internal(set) var baseURL: URL
-        /// Timeout for the media-transport join (signaling + ICE).
-        public var connectTimeout: TimeInterval
-        /// Timeout for the REST session-start request. Sized separately
-        /// from ``connectTimeout`` because session provisioning is
-        /// bounded by the backend's agent dispatch.
-        public var requestTimeout: TimeInterval
-        /// Defaults merged under each per-call config (per-call values
-        /// win field by field).
-        /// TLS verification for the REST session-start call. ``.auto`` (default)
-        /// skips verification only for loopback hosts so a self-signed local-dev
-        /// backend works; remote hosts are always verified.
-        public var verifyTLS: VerifyTLS
-
-        /// `true` only for a ``Credential/apiKey(_:)`` credential — a
-        /// minted ``Credential/token(_:)`` (or the ``Credential/tokenSource(_:)``
-        /// that fetches one) cannot mint further tokens.
-        public var canMint: Bool {
-            if case .apiKey = credential { return true }
-            return false
-        }
-
-        /// The bearer value for this options' credential — awaited per
-        /// request so a ``Credential/tokenSource(_:)`` can refresh.
-        func bearerToken() async throws -> String {
-            try await credential.bearerToken()
-        }
-
-        /// ``baseURL`` defaults to ``RealtimeBaseURL/resolve()`` — the
-        /// environment override, else production. Pass one explicitly when the
-        /// credential itself names the backend that issued it: a stored or
-        /// minted credential is only valid against that origin, and resolving
-        /// from the environment would send its session start elsewhere.
-        public init(
-            credential: Credential,
-            baseURL: URL? = nil,
-            connectTimeout: TimeInterval = 30,
-            requestTimeout: TimeInterval = 45,
-            verifyTLS: VerifyTLS = .auto
-        ) {
-            self.credential = credential
-            self.baseURL = baseURL ?? RealtimeBaseURL.resolve()
-            self.connectTimeout = connectTimeout
-            self.requestTimeout = requestTimeout
-            self.verifyTLS = verifyTLS
-        }
-
-        /// Convenience: a workspace api-key credential.
-        public init(
-            apiKey: String,
-            baseURL: URL? = nil,
-            connectTimeout: TimeInterval = 30,
-            requestTimeout: TimeInterval = 45,
-            verifyTLS: VerifyTLS = .auto
-        ) {
-            self.init(
-                credential: .apiKey(apiKey),
-                baseURL: baseURL,
-                connectTimeout: connectTimeout,
-                requestTimeout: requestTimeout,
-                verifyTLS: verifyTLS
-            )
-        }
-
-        /// Convenience: a minted per-user JWT credential.
-        public init(
-            token: String,
-            baseURL: URL? = nil,
-            connectTimeout: TimeInterval = 30,
-            requestTimeout: TimeInterval = 45,
-            verifyTLS: VerifyTLS = .auto
-        ) {
-            self.init(
-                credential: .token(token),
-                baseURL: baseURL,
-                connectTimeout: connectTimeout,
-                requestTimeout: requestTimeout,
-                verifyTLS: verifyTLS
-            )
-        }
-
-        /// Convenience: a self-refreshing ``TokenSource`` credential.
-        public init(
-            tokenSource: TokenSource,
-            baseURL: URL? = nil,
-            connectTimeout: TimeInterval = 30,
-            requestTimeout: TimeInterval = 45,
-            verifyTLS: VerifyTLS = .auto
-        ) {
-            self.init(
-                credential: .tokenSource(tokenSource),
-                baseURL: baseURL,
-                connectTimeout: connectTimeout,
-                requestTimeout: requestTimeout,
-                verifyTLS: verifyTLS
-            )
-        }
-
-        /// Zero-argument construction: the SDK resolves an API key itself —
-        /// `COSMO_API_KEY` from the environment, else the `cosmo login`
-        /// credentials file (`COSMO_CREDENTIALS_FILE` or
-        /// `~/.cosmo/credentials`, profile from `COSMO_PROFILE`). A file
-        /// credential brings its own `base_url` along, since a stored key is
-        /// only valid against the backend that issued it. Throws
-        /// ``CredentialsError`` when nothing resolves, the file is unusable,
-        /// or the stored key expired.
-        public init(
-            connectTimeout: TimeInterval = 30,
-            requestTimeout: TimeInterval = 45,
-            verifyTLS: VerifyTLS = .auto
-        ) throws {
-            try self.init(
-                environment: ProcessInfo.processInfo.environment,
-                connectTimeout: connectTimeout,
-                requestTimeout: requestTimeout,
-                verifyTLS: verifyTLS
-            )
-        }
-
-        /// The resolving init against a supplied environment; internal so
-        /// tests can inject one without mutating the process environment.
-        init(
-            environment: [String: String],
-            connectTimeout: TimeInterval = 30,
-            requestTimeout: TimeInterval = 45,
-            verifyTLS: VerifyTLS = .auto
-        ) throws {
-            let resolved = try CredentialsFile.resolveFromRuntime(environment: environment)
-            self.init(
-                credential: .apiKey(resolved.apiKey),
-                connectTimeout: connectTimeout,
-                requestTimeout: requestTimeout,
-                verifyTLS: verifyTLS
-            )
-            if let base = resolved.baseURL {
-                var raw = base
-                while raw.hasSuffix("/") { raw.removeLast() }
-                guard let url = URL(string: raw), url.scheme != nil else {
-                    throw CredentialsError.fileInvalid(
-                        "The resolved base_url is not a URL: \(base). Run: cosmo login"
-                    )
-                }
-                self.baseURL = url
-            }
-        }
-    }
 
     // MARK: Lifecycle vocabulary
 
@@ -487,11 +295,11 @@ public actor RealtimeSession {
     /// - Parameter rpcHandlers: client-tool handlers registered by method name
     ///   but **not** advertised to the agent — for server-orchestrated tools the
     ///   server invokes over RPC directly (never chosen from the tool list).
-    ///   Advertised-and-handled tools belong in ``SessionConfig/tools`` as a
-    ///   ``SessionConfig/Tool/client(name:description:parameters:handler:)``;
+    ///   Advertised-and-handled tools belong in ``RealtimeAgent/tools`` as a
+    ///   ``AgentTool/client(name:description:parameters:handler:)``;
     ///   these are the register-only complement. On a name collision the
     ///   ``rpcHandlers`` entry wins.
-    public static func start(
+    static func start(
         _ options: Options,
         config: SessionConfig = SessionConfig(),
         micMuted: Bool = false,
@@ -1152,7 +960,7 @@ public actor RealtimeSession {
     }
 }
 
-extension RealtimeSession.Options {
+extension RealtimeClient.Options {
     /// The middleware stack every generated-client construction shares: bearer
     /// auth, and the room ref when a prepared room was taken.
     func _apiMiddlewares(
@@ -1222,7 +1030,7 @@ public enum RealtimeSessionError: Error, LocalizedError, Equatable {
     /// A send was attempted outside an active session.
     case notConnected
     /// The transport failed while starting the session (thrown from
-    /// ``RealtimeSession/start(_:config:)``). A mid-session transport drop
+    /// ``RealtimeAgent/start(resumeSessionId:maxSessionSeconds:storeRecording:storeAudio:storeTranscript:storeVideo:micMuted:rpcHandlers:)``). A mid-session transport drop
     /// does not throw here — it ends the ``RealtimeSession/events`` stream
     /// with a terminal ``RealtimeSession/Event/sessionEnded(_:)`` instead.
     case transportError(message: String)

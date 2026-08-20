@@ -37,8 +37,8 @@ public struct ScreenHighlightBoxRequest: Sendable, Equatable {
 /// reports `false`, which is the model's cue to re-target through
 /// `cosmo_screen_locate` rather than leave a marker sitting next to the control.
 ///
-/// Shared by ``SessionConfig/Tool/screenHighlightBox(onHighlight:)`` and
-/// ``SessionConfig/Tool/screenHighlightElement(onHighlight:)`` so the model
+/// Shared by ``AgentTool/screenHighlightBox(onHighlight:)`` and
+/// ``AgentTool/screenHighlightElement(onHighlight:)`` so the model
 /// reads the same field whichever it called. From a grounded handle the answer
 /// is always ``landedOnControl``.
 public struct ScreenHighlightOutcome: Sendable, Equatable {
@@ -161,8 +161,8 @@ public enum ScreenHighlightBoxTool {
     }
 }
 
-extension SessionConfig.Tool {
-    /// The estimate-based highlight, ready to add to ``SessionConfig/tools``.
+extension AgentTool {
+    /// The estimate-based highlight, ready to add to ``RealtimeAgent/tools``.
     /// Unlike the other two screen renderers it needs no
     /// ``screenLocate(capture:)`` slot behind it — the model brings its own
     /// coordinates — so a host that only wants to point can declare this alone.
@@ -172,7 +172,7 @@ extension SessionConfig.Tool {
     /// is what tells it to locate properly instead of trusting the estimate.
     public static func screenHighlightBox(
         onHighlight: @escaping @Sendable (ScreenHighlightBoxRequest) async throws -> ScreenHighlightOutcome
-    ) -> SessionConfig.Tool {
+    ) -> AgentTool {
         .sdkClient(SDKClientTool(
             name: ScreenHighlightBoxTool.name,
             description: ScreenHighlightBoxTool.toolDescription,

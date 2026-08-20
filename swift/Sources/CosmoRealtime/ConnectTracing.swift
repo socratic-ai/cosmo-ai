@@ -32,7 +32,7 @@ final class CosmoLiveKitTracer: Tracing, Sendable {
     }
 }
 
-public extension RealtimeSession {
+public extension RealtimeClient {
     /// Install connect-latency tracing. Call once at app launch, BEFORE any
     /// `Room` operation — LiveKit freezes its tracer/logger on first use
     /// (`sharedTracing`/`sharedLogger` are lazily-initialized globals).

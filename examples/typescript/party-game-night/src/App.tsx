@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 
-import { CosmoRealtimeProvider, RealtimeClient, type RealtimeSession } from 'cosmo-ai';
+import { RealtimeProvider, RealtimeClient, type RealtimeSession } from 'cosmo-ai';
 
 import { partyGameNightAgent } from './agent';
 import { GameStore } from './game/state';
@@ -15,7 +15,7 @@ type Phase = 'idle' | 'starting' | 'live';
 export function App() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [apiKey, setApiKey] = useState(API_KEY_DEFAULT);
-  const [client, setClient] = useState<RealtimeClient | null>(null);
+  const [session, setSession] = useState<RealtimeSession | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
@@ -26,23 +26,21 @@ export function App() {
   if (storeRef.current === null) storeRef.current = new GameStore();
   const store = storeRef.current;
 
-  const clientRef = useRef<RealtimeClient | null>(null);
   const sessionRef = useRef<RealtimeSession | null>(null);
 
   const handleEnded = useCallback((reason: string | null) => {
-    // A client is single-use, and an abandoned one keeps the microphone it
-    // captured. The start button stays disabled until the release lands.
-    const spent = clientRef.current;
-    clientRef.current = null;
+    // An abandoned session keeps the microphone it captured; close() resolves
+    // once the release lands, and the start button stays disabled until then.
+    const spent = sessionRef.current;
     sessionRef.current = null;
-    setClient(null);
+    setSession(null);
     setWarning(null);
     setNote(reason === null || reason === 'client_ended' ? null : `The show ended (${reason}).`);
     void (async () => {
       try {
-        await spent?.disconnect();
+        await spent?.close();
       } catch (err) {
-        console.error('[party-game-night] disconnect failed', err);
+        console.error('[party-game-night] close failed', err);
       }
       setPhase('idle');
     })();
@@ -55,10 +53,9 @@ export function App() {
     setNote(null);
     setWarning(null);
 
-    let live: RealtimeClient;
     let session: RealtimeSession;
     try {
-      live = new RealtimeClient({ apiKey });
+      const live = new RealtimeClient({ apiKey });
       session = await live.agent(partyGameNightAgent(store)).start();
     } catch (err) {
       console.error('[party-game-night] session start failed', err);
@@ -76,7 +73,6 @@ export function App() {
       return;
     }
 
-    clientRef.current = live;
     sessionRef.current = session;
 
     session.on('ready', (ev) => {
@@ -89,7 +85,7 @@ export function App() {
     // end_call, network loss — so every teardown funnels through here.
     session.on('session_ended', (ev) => handleEnded(ev.reason ?? null));
 
-    setClient(live);
+    setSession(session);
     setPhase('live');
   }, [apiKey, phase, store, handleEnded]);
 
@@ -104,11 +100,11 @@ export function App() {
     }
   }, [handleEnded]);
 
-  if (phase === 'live' && client !== null) {
+  if (phase === 'live' && session !== null) {
     return (
-      <CosmoRealtimeProvider client={client}>
+      <RealtimeProvider session={session}>
         <LiveView store={store} warning={warning} onEnd={() => void end()} />
-      </CosmoRealtimeProvider>
+      </RealtimeProvider>
     );
   }
 

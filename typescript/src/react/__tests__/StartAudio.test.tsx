@@ -2,14 +2,14 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 
-import type { RealtimeClient } from '../../core/realtime_client';
+import type { RealtimeSession } from '../../core/session';
 import { RealtimeProvider } from '../RealtimeProvider';
 import { StartAudio } from '../components/StartAudio';
 
-function fakeClient(output: 'blocked' | 'silent'): RealtimeClient {
+function fakeSession(output: 'blocked' | 'silent'): RealtimeSession {
   return {
     attachAudioElement: vi.fn(),
-    setMicMuted: vi.fn(),
+    setMuted: vi.fn(),
     resumeAudioPlayback: vi.fn(async () => undefined),
     on: vi.fn(() => () => undefined),
     getSnapshot: () => ({
@@ -22,13 +22,13 @@ function fakeClient(output: 'blocked' | 'silent'): RealtimeClient {
       },
       error: null,
     }),
-  } as unknown as RealtimeClient;
+  } as unknown as RealtimeSession;
 }
 
 describe('StartAudio default affordance', () => {
   it('renders a default unlock button while playback is blocked', () => {
     render(
-      <RealtimeProvider client={fakeClient('blocked')}>
+      <RealtimeProvider session={fakeSession('blocked')}>
         <StartAudio />
       </RealtimeProvider>,
     );
@@ -38,7 +38,7 @@ describe('StartAudio default affordance', () => {
 
   it('renders nothing by default once playback is unblocked', () => {
     const { container } = render(
-      <RealtimeProvider client={fakeClient('silent')}>
+      <RealtimeProvider session={fakeSession('silent')}>
         <StartAudio />
       </RealtimeProvider>,
     );
@@ -48,7 +48,7 @@ describe('StartAudio default affordance', () => {
 
   it('hands the render prop the blocked flag instead of rendering the default', () => {
     render(
-      <RealtimeProvider client={fakeClient('silent')}>
+      <RealtimeProvider session={fakeSession('silent')}>
         <StartAudio>{({ blocked }) => <span>blocked: {String(blocked)}</span>}</StartAudio>
       </RealtimeProvider>,
     );

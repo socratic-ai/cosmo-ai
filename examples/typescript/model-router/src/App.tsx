@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   BarVisualizer,
-  CosmoRealtimeProvider,
+  RealtimeProvider,
   MicToggle,
   RealtimeAudio,
   RealtimeClient,
@@ -16,6 +16,7 @@ import {
   useTransportState,
   useTranscript,
   type RealtimeClientOptions,
+  type RealtimeSession,
   type TransportState,
 } from 'cosmo-ai';
 
@@ -83,12 +84,12 @@ const STATUS_META: Record<TransportState, { label: string; color: string; pulse:
 
 export function App() {
   const [apiKey, setApiKey] = useState(API_KEY_DEFAULT);
-  const [client, setClient] = useState<RealtimeClient | null>(null);
+  const [session, setSession] = useState<RealtimeSession | null>(null);
   const [connecting, setConnecting] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
   const [intent, setIntent] = useState('');
-  // `RouteResult` for the session `client` currently holds — set alongside
-  // `client` itself so the badge/rationale never reference the wrong run.
+  // `RouteResult` for the run `session` currently holds — set alongside
+  // `session` itself so the badge/rationale never reference the wrong run.
   const [pendingRoute, setPendingRoute] = useState<RouteResult | null>(null);
 
   // Synchronous in-flight guard: `connecting` state isn't visible until the
@@ -113,9 +114,8 @@ export function App() {
       ? { token: TokenSource.endpoint('/token', { headers: () => mintHeaders(apiKey) }) }
       : { apiKey };
     try {
-      const c = new RealtimeClient(opts);
-      await c.agent(result.agentConfig).start();
-      setClient(c);
+      const client = new RealtimeClient(opts);
+      setSession(await client.agent(result.agentConfig).start());
       setPendingRoute(result);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -133,12 +133,12 @@ export function App() {
   }, [apiKey, intent]);
 
   const handleDisconnect = useCallback(() => {
-    setClient(null);
+    setSession(null);
     setPendingRoute(null);
-    void client?.disconnect().catch((err) => {
-      console.error('[model-router] disconnect failed', err);
+    void session?.end().catch((err) => {
+      console.error('[model-router] end failed', err);
     });
-  }, [client]);
+  }, [session]);
 
   return (
     <main
@@ -184,15 +184,15 @@ export function App() {
           </p>
         )}
 
-        {client ? (
-          <CosmoRealtimeProvider client={client} maxTranscriptLength={40}>
+        {session ? (
+          <RealtimeProvider session={session} maxTranscriptLength={40}>
             <Session
               intent={intent}
               pendingRoute={pendingRoute}
               onDisconnect={handleDisconnect}
               onConnectError={setConnectError}
             />
-          </CosmoRealtimeProvider>
+          </RealtimeProvider>
         ) : (
           <>
             <section style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
@@ -264,7 +264,7 @@ export function App() {
 }
 
 /** Everything that needs the SDK's React context — mounted only once
- *  `client` exists, so these hooks never run against a null client. */
+ *  `session` exists, so these hooks never run against a null session. */
 function Session({
   intent,
   pendingRoute,

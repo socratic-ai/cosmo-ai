@@ -77,7 +77,7 @@ extension RealtimeSession {
         case reconnecting(Reconnecting)
         /// A first-party Cosmo event (token usage). The
         /// server emits these for first-party sessions; delivery is not gated on
-        /// the client having sent a ``SessionConfig/cosmo`` block.
+        /// the client having sent a `cosmo` block on `session-config`.
         case cosmo(CosmoEvent)
         /// Observability: a server-runtime silence hook fired. ``action``
         /// reports what the server already did (say / end call).

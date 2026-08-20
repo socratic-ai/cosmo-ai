@@ -2,7 +2,7 @@ import Foundation
 import LiveKit
 import os
 
-// Binds client-tool handlers (the public ``SessionConfig.Tool.client``
+// Binds client-tool handlers (the public ``AgentTool.client``
 // surface carries no transport vocabulary) to the LiveKit RPC transport.
 // The agents runtime drives client tools over
 // ``localParticipant.registerRpcMethod`` / ``performRpc``: each handler
@@ -270,7 +270,7 @@ func isAuthorizedClientToolCaller(
     participants.contains { $0.identity == callerIdentity && $0.isAgent }
 }
 
-/// A client tool declared in ``SessionConfig`` could not be bound to the
+/// A declared client tool could not be bound to the
 /// transport. The tool was already advertised to the server, so the start
 /// fails closed rather than running with a tool the agent can call but
 /// this client cannot service.

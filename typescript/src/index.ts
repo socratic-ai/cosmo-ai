@@ -171,12 +171,11 @@ export type {
 export {
   RealtimeProvider,
   CosmoRealtimeProvider,
-  useRealtimeClient,
+  useRealtimeSessionContext,
 } from './react/RealtimeProvider';
 export type {
   RealtimeProviderProps,
   CosmoRealtimeProviderProps,
-  RealtimeClientLike,
   RealtimeSnapshotState,
   RealtimeTranscriptItem,
   RealtimeToolCallItem,

@@ -10,13 +10,13 @@
  * way ``RealtimeProvider`` is sugar for reads. It owns the pieces an
  * app otherwise hand-rolls:
  *
- * - single-use-client semantics: a fresh ``RealtimeClient`` per run, and on
- *   any exit path the spent client is disconnected so the captured
+ * - one-session-at-a-time semantics: a fresh ``RealtimeClient`` per run,
+ *   and on any exit path the spent session is closed so the captured
  *   microphone actually releases — ``phase`` stays ``'ending'`` until the
  *   release lands, so a Start button gated on ``phase === 'idle'`` cannot
  *   open a session whose mic track is still held by the last one;
  * - ownership of the in-flight start: ``end()`` or an unmount during
- *   ``'starting'`` marks the run cancelled, and the client is disconnected
+ *   ``'starting'`` marks the run cancelled, and the session is ended
  *   the moment the start settles instead of going live unowned;
  * - ``ready`` → surfacing server-rejected tool specs (``rejectedTools``,
  *   with ``warning`` as a ready-made notice);
@@ -170,10 +170,10 @@ export function useRealtimeSession(
   }, []);
 
   const handleEnded = useCallback(
-    (spent: RealtimeClient, summary: RealtimeSessionEndSummary) => {
+    (spent: RealtimeSession, summary: RealtimeSessionEndSummary) => {
       // A late event off an already-torn-down run must not clobber the
       // state of a newer one.
-      if (clientRef.current !== spent) return;
+      if (sessionRef.current !== spent) return;
       clientRef.current = null;
       sessionRef.current = null;
       if (!disposedRef.current) {
@@ -184,9 +184,11 @@ export function useRealtimeSession(
       movePhase('ending');
       void (async () => {
         try {
-          await spent.disconnect();
+          // ``close()`` is idempotent and resolves only once teardown —
+          // including the mic release — has landed.
+          await spent.close();
         } catch (err) {
-          log.error('[realtime] disconnect after session end failed', err);
+          log.error('[realtime] close after session end failed', err);
         }
         movePhase('idle');
       })();
@@ -232,9 +234,9 @@ export function useRealtimeSession(
         // flight — the run is over before it went live; release the mic.
         void (async () => {
           try {
-            await live.disconnect();
+            await started.end();
           } catch (err) {
-            log.error('[realtime] disconnect after cancelled start failed', err);
+            log.error('[realtime] end after cancelled start failed', err);
           }
           movePhase('idle');
         })();
@@ -253,13 +255,13 @@ export function useRealtimeSession(
         setWarning(`The server rejected tools: ${names}`);
       });
       started.on('session_ended', (ev) =>
-        handleEnded(live, endSummaryFromState(started.state, ev.reason)),
+        handleEnded(started, endSummaryFromState(started.state, ev.reason)),
       );
       // ``session_ended`` is not replayed — an end racing the subscription
       // shows only in the session's latched terminal state.
       const state = started.state;
       if (state.kind === 'disconnected') {
-        handleEnded(live, endSummaryFromState(state, null));
+        handleEnded(started, endSummaryFromState(state, null));
         return { ok: false, reason: 'ended', error: null };
       }
 
@@ -276,9 +278,8 @@ export function useRealtimeSession(
       movePhase('ending');
       return;
     }
-    const spent = clientRef.current;
     const current = sessionRef.current;
-    if (spent === null || current === null) return;
+    if (current === null) return;
     // Enter 'ending' before the graceful end, not after it lands —
     // repeated End clicks and Start gating stay deterministic through
     // the whole teardown.
@@ -287,7 +288,7 @@ export function useRealtimeSession(
       await current.end();
     } catch (err) {
       log.error('[realtime] session end failed', err);
-      handleEnded(spent, { reason: 'client_ended', detail: null });
+      handleEnded(current, { reason: 'client_ended', detail: null });
     }
   }, [handleEnded, movePhase]);
 
@@ -297,11 +298,11 @@ export function useRealtimeSession(
     disposedRef.current = false;
     return () => {
       disposedRef.current = true;
-      const live = clientRef.current;
+      const live = sessionRef.current;
       if (live !== null) {
         // The owner unmounted mid-session: release the microphone.
-        live.disconnect().catch((err: unknown) => {
-          log.error('[realtime] disconnect on unmount failed', err);
+        live.end().catch((err: unknown) => {
+          log.error('[realtime] end on unmount failed', err);
         });
       }
     };

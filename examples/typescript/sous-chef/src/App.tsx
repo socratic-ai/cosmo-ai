@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import {
-  CosmoRealtimeProvider,
+  RealtimeProvider,
   SessionBusyError,
   SessionEntitlementError,
   SessionStartError,
@@ -72,7 +72,7 @@ export function App() {
   // The hook owns the session lifecycle: a single-use client per run, the mic
   // released before the next start, every exit path funnelled into one
   // teardown. The camera and the card stay this app's job.
-  const { phase, client, start, end, error, warning, endedReason, lastEnd } = useRealtimeSession({
+  const { phase, session, start, end, error, warning, endedReason, lastEnd } = useRealtimeSession({
     makeAgent: (live) => live.agent(sousChefAgent(cookStore, PROVIDER)),
     clientOptions: { apiKey: API_KEY },
   });
@@ -160,13 +160,13 @@ export function App() {
 
   if (phase === 'live') {
     return (
-      <CosmoRealtimeProvider client={client}>
+      <RealtimeProvider session={session}>
         <LiveView
           stream={camera.stream}
           note={warning ?? cameraNote}
           onEnd={() => void end()}
         />
-      </CosmoRealtimeProvider>
+      </RealtimeProvider>
     );
   }
 

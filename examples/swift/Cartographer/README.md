@@ -30,8 +30,8 @@ granting microphone access.
 
 | SDK surface | Where |
 | --- | --- |
-| `RealtimeSession.start` + the typed `events` stream | `Conductor.consume(_:)` |
-| Client tools with `Decodable` args (`SessionConfig.Tool.define`) | `Conductor.mapTools()` |
+| `agent.start()` + the typed `events` stream | `Conductor.consume(_:)` |
+| Client tools with `Decodable` args (`AgentTool.define`) | `Conductor.mapTools()` |
 | `preToolUse` deny and `sessionEnd` hooks | `Conductor.mapHooks()` |
 | Transcript append vs replace | `Conductor.append(_:_:isFinal:)` / `replace(_:_:)` |
 | `setMuted`, `send(text:)`, `end()` | `Conductor.toggleMute()` / `say(_:)` / `stop()` |

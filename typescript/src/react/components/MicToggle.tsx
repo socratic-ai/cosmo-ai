@@ -3,7 +3,7 @@
 import { useCallback } from 'react';
 
 import { useMediaState, useTransportState } from '../hooks';
-import { useRealtimeClient } from '../RealtimeProvider';
+import { useRealtimeSessionContext } from '../RealtimeProvider';
 
 export type MicToggleProps = {
   /** Optional className forwarded to the root ``<button>``. */
@@ -23,12 +23,12 @@ export type MicToggleProps = {
  *
  * Intentionally renders a plain ``<button>`` with no opinions about
  * styling or icon library — host apps style it via ``className`` or
- * build their own component on top of ``useRealtimeClient()`` and
- * ``useMediaState()``. The component is self-contained: importing it
+ * build their own component on top of ``useRealtimeSessionContext()``
+ * and ``useMediaState()``. The component is self-contained: importing it
  * pulls in no icon library or design-system dependency.
  */
 export function MicToggle({ className, label, onError }: MicToggleProps) {
-  const client = useRealtimeClient();
+  const session = useRealtimeSessionContext();
   const media = useMediaState();
   const transportState = useTransportState();
   const muted = media.mic === 'muted';
@@ -36,17 +36,17 @@ export function MicToggle({ className, label, onError }: MicToggleProps) {
     ? (label?.muted ?? 'Unmute')
     : (label?.unmuted ?? 'Mute');
   const ariaLabel = muted ? 'Unmute microphone' : 'Mute microphone';
-  const disabled = transportState !== 'ready';
+  const disabled = transportState !== 'ready' || session === null;
 
   const handleClick = useCallback(() => {
-    // ``setMicMuted`` rejects when the transport publish fails (mic
+    // ``setMuted`` rejects when the transport publish fails (mic
     // toggle out of sync, network drop mid-toggle, etc.). Catch so
     // the unawaited promise doesn't surface as an unhandled rejection,
     // and route to the host via ``onError`` for UX feedback.
-    client.setMicMuted(!muted).catch((err: unknown) => {
+    session?.setMuted(!muted).catch((err: unknown) => {
       onError?.(err);
     });
-  }, [client, muted, onError]);
+  }, [session, muted, onError]);
 
   return (
     <button

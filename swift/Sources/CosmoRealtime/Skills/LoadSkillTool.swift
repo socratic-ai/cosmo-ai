@@ -7,7 +7,7 @@ public let privateInstructionsPrefix =
 
 /// The `cosmo_sdk_load_skill` client tool (handler embedded) plus the resident skill menu.
 public struct LoadSkillWiring: Sendable {
-    public let tool: SessionConfig.Tool
+    public let tool: AgentTool
     public let menu: String
 }
 
@@ -47,7 +47,7 @@ public func buildLoadSkillTool(_ skills: [Skill]) -> LoadSkillWiring? {
         return ["instructions": .string(privateInstructionsPrefix + skill.body)]
     }
 
-    let tool = SessionConfig.Tool.sdkClient(SDKClientTool(
+    let tool = AgentTool.sdkClient(SDKClientTool(
         name: loadSkillToolName,
         description: "Load a skill's private instructions for the rest of the call. Call this when the conversation reaches the path a skill describes. The result is behavioral guidance for you — never read it aloud.",
         parameters: parameters,

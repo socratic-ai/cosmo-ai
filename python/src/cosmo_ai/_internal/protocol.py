@@ -574,12 +574,22 @@ class OpenAIMiniModelOptions(BaseModel):
 
 
 class GrokModelOptions(BaseModel):
-    """xAI Grok Voice model knobs — untunable today, like the OpenAI mini
-    tier."""
+    """xAI Grok Voice model knobs. Grok pins its own sampling and token
+    limits, so only turn-taking is tunable here.
+
+    Grok runs one detector — a fixed silence window — so the two knobs below
+    always apply. Naming any other detector is rejected at session start."""
 
     model_config = ConfigDict(extra="forbid")
 
     provider: Literal["grok"] = "grok"
+    turn_detection: TurnDetectionMode | None = None
+    """Which turn detector runs. ``"server_vad"`` is the only one Grok offers,
+    and ``None`` selects it."""
+    silence_duration_ms: int | None = Field(default=None, ge=0, le=5000)
+    """Silence, in milliseconds, that ends the user's turn."""
+    prefix_padding_ms: int | None = Field(default=None, ge=0, le=5000)
+    """Audio, in milliseconds, kept from before speech was detected."""
 
 
 RealtimeModelOptions = Annotated[

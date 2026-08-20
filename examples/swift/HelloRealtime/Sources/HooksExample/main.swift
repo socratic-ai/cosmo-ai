@@ -33,7 +33,7 @@ let readyFlag = ReadyFlag()
 
 // MARK: - Client tools
 
-let getBalanceTool = SessionConfig.Tool.client(
+let getBalanceTool = AgentTool.client(
     name: "get_account_balance",
     description: "Return the balance for a named account.",
     parameters: [
@@ -47,7 +47,7 @@ let getBalanceTool = SessionConfig.Tool.client(
     }
 )
 
-let deleteAccountTool = SessionConfig.Tool.client(
+let deleteAccountTool = AgentTool.client(
     name: "delete_account",
     description: "Permanently delete the user's account.",
     parameters: [
@@ -93,13 +93,17 @@ let hooks: [Hook] = [
 
 // MARK: - Session
 
-let agent = try RealtimeAgent(tools: [getBalanceTool, deleteAccountTool], hooks: hooks)
-
-let options = try RealtimeSession.Options()
-let config = SessionConfig(instructions: "You are a concise bank phone-support agent. Keep replies short.")
+let options = try RealtimeClient.Options()
+let client = RealtimeClient(options)
+// Hooks are part of the persona, alongside the tools they gate.
+let agent = try client.agent(
+    instructions: "You are a concise bank phone-support agent. Keep replies short.",
+    tools: [getBalanceTool, deleteAccountTool],
+    hooks: hooks
+)
 
 print("connecting to \(options.baseURL.absoluteString)…")
-let session = try await agent.start(options, config: config, micMuted: true)
+let session = try await agent.start(micMuted: true)
 
 let pump = Task {
     do {

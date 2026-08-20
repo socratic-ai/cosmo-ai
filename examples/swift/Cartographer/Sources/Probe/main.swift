@@ -19,7 +19,7 @@ struct Args: Decodable, Sendable {
     let parent: String?
 }
 
-let addIdea = try SessionConfig.Tool.define(
+let addIdea = try AgentTool.define(
     name: "add_idea",
     description: "Put one idea on the user's visible mind map. Call immediately for each idea.",
     input: .object(
@@ -35,24 +35,21 @@ let addIdea = try SessionConfig.Tool.define(
     return ["id": .string(args.idea.lowercased().replacingOccurrences(of: " ", with: "-"))]
 }
 
-let options = try RealtimeSession.Options()
+let options = try RealtimeClient.Options()
 say("connecting to \(options.baseURL.host ?? "?") …")
 let t0 = Date()
 
 let audioOff = ProcessInfo.processInfo.environment["NO_AUDIO"] == "1"
 
-let session = try await RealtimeSession.start(
-    options,
-    config: SessionConfig(
-        audio: .init(output: audioOff ? false : nil),
-        instructions: """
-        You draw a mind map from what the user says. Call add_idea for every \
-        idea, immediately, before replying. Then reply in one short sentence.
-        """,
-        tools: [addIdea]
-    ),
-    micMuted: true
+let agent = try RealtimeClient(options).agent(
+    instructions: """
+    You draw a mind map from what the user says. Call add_idea for every \
+    idea, immediately, before replying. Then reply in one short sentence.
+    """,
+    audio: AudioConfig(output: audioOff ? false : nil),
+    tools: [addIdea]
 )
+let session = try await agent.start(micMuted: true)
 say("start() returned in \(String(format: "%.2f", Date().timeIntervalSince(t0)))s")
 
 let stateWatch = Task {

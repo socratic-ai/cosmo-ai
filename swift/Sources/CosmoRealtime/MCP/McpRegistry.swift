@@ -6,12 +6,12 @@ public typealias MCPTransportFactory = @Sendable (McpStdioServer) throws -> MCPT
 /// A per-session live MCP handle: the proxy tools and idempotent teardown of
 /// every server connection.
 public actor ConnectedMcp {
-    public let tools: [SessionConfig.Tool]
+    public let tools: [AgentTool]
     public let skipped: [SkippedTool]
     private let connections: [MCPConnection]
     private var closed = false
 
-    init(tools: [SessionConfig.Tool], skipped: [SkippedTool], connections: [MCPConnection]) {
+    init(tools: [AgentTool], skipped: [SkippedTool], connections: [MCPConnection]) {
         self.tools = tools
         self.skipped = skipped
         self.connections = connections

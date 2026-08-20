@@ -3,14 +3,14 @@ import {
   MicToggle,
   RealtimeAudio,
   StartAudio,
-  useRealtimeClient,
+  useRealtimeSessionContext,
   useToolCalls,
   useTranscript,
   useTransportState,
 } from 'cosmo-ai';
 
 export function AgentPanel({ onEnd }: { onEnd: () => void }) {
-  const client = useRealtimeClient();
+  const session = useRealtimeSessionContext();
   const transport = useTransportState();
   const transcript = useTranscript();
   const toolCalls = useToolCalls();
@@ -30,7 +30,7 @@ export function AgentPanel({ onEnd }: { onEnd: () => void }) {
     const text = draft.trim();
     if (!text || !live) return;
     setDraft('');
-    void client.sendText(text);
+    void session?.sendText(text);
   };
 
   return (
@@ -48,7 +48,7 @@ export function AgentPanel({ onEnd }: { onEnd: () => void }) {
         <button
           className="btn btn-ghost"
           onClick={() => {
-            void client.disconnect();
+            void session?.end();
             onEnd();
           }}
         >

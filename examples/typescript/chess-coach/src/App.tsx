@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  CosmoRealtimeProvider,
+  RealtimeProvider,
   MicToggle,
   RealtimeAudio,
   RealtimeClient,
@@ -128,11 +128,10 @@ export function App() {
   const [micHeard, setMicHeard] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
 
-  const clientRef = useRef<RealtimeClient | null>(null);
   const sessionRef = useRef<RealtimeSession | null>(null);
   const captureRef = useRef<FrameCapture | null>(null);
   const micMonitorRef = useRef<MicMonitor | null>(null);
-  const [client, setClient] = useState<RealtimeClient | null>(null);
+  const [session, setSession] = useState<RealtimeSession | null>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
 
   // Watch the mic while idle: a session started on a silent device does not
@@ -165,10 +164,9 @@ export function App() {
   }, [phase]);
 
   const handleEnded = useCallback((reason: string | null) => {
-    const spent = clientRef.current;
-    clientRef.current = null;
+    const spent = sessionRef.current;
     sessionRef.current = null;
-    setClient(null);
+    setSession(null);
     setWarning(null);
     setNote(reason === null || reason === 'client_ended' ? null : `Session ended (${reason}).`);
     captureRef.current?.dispose();
@@ -177,9 +175,9 @@ export function App() {
     setStream(null);
     void (async () => {
       try {
-        await spent?.disconnect();
+        await spent?.close();
       } catch (err) {
-        console.error('[chess-coach] disconnect failed', err);
+        console.error('[chess-coach] close failed', err);
       }
       setPhase('idle');
     })();
@@ -200,7 +198,6 @@ export function App() {
     const pinned = orientation === 'auto' ? undefined : orientation;
     const vision = { baseUrl, apiKey };
     let capture: FrameCapture | null = null;
-    let live: RealtimeClient;
     let session: RealtimeSession;
     try {
       capture = new FrameCapture(await openBoardStream());
@@ -209,7 +206,7 @@ export function App() {
       // share" on a session that has one.
       captureRef.current = capture;
       warmAnalysisEngine();
-      live = new RealtimeClient({ apiKey });
+      const live = new RealtimeClient({ apiKey });
       session = await live
         .agent({
           instructions: COACH_INSTRUCTIONS,
@@ -245,7 +242,6 @@ export function App() {
       return;
     }
 
-    clientRef.current = live;
     sessionRef.current = session;
 
     // A tool the server refuses is silently absent from the model's menu —
@@ -261,7 +257,7 @@ export function App() {
     session.on('session_ended', (ev) => handleEnded(ev.reason ?? null));
 
     setStream(capture.stream);
-    setClient(live);
+    setSession(session);
     setPhase('live');
   }, [apiKey, baseUrl, orientation, phase, handleEnded]);
 
@@ -279,7 +275,7 @@ export function App() {
   // the engine worker survives if the tracks and wasm are not released too.
   useEffect(
     () => () => {
-      void clientRef.current?.disconnect();
+      void sessionRef.current?.end();
       captureRef.current?.dispose();
       captureRef.current = null;
       micMonitorRef.current?.stop();
@@ -293,12 +289,12 @@ export function App() {
     return () => document.body.classList.remove('lesson');
   }, [phase]);
 
-  if (phase === 'live' && client !== null && stream !== null) {
+  if (phase === 'live' && session !== null && stream !== null) {
     return (
       <div className="shell wide">
-        <CosmoRealtimeProvider client={client} maxTranscriptLength={50}>
+        <RealtimeProvider session={session} maxTranscriptLength={50}>
           <SessionView stream={stream} warning={warning} onEnd={() => void end()} />
-        </CosmoRealtimeProvider>
+        </RealtimeProvider>
       </div>
     );
   }

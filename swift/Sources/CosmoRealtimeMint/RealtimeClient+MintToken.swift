@@ -14,7 +14,7 @@ extension RealtimeClient {
     /// Mint a short-lived per-user JWT for `externalUserId` (POST auth/token).
     /// Run this server-side with an api-key credential; hand the returned
     /// ``MintedToken/jwt`` to the end user's device, which constructs
-    /// ``RealtimeSession/Options`` and starts a session. Idempotent per
+    /// ``RealtimeClient/Options`` and starts a session. Idempotent per
     /// `(workspace, externalUserId)` — the same external user maps to the same
     /// auto-provisioned project on repeat calls. `ttlSeconds` (60–86400)
     /// shortens the 24-hour default lifetime.
