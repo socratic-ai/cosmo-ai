@@ -60,6 +60,10 @@ export type CredentialsErrorCode =
   /** A workspace API key was passed as an end-user token. The backend would
    *  honor it as a bearer, which is how a key ends up shipped to end users. */
   | 'api_key_in_token_slot'
+  /** The credential cannot go in an `Authorization` header even after
+   *  surrounding whitespace and a byte-order mark are trimmed: it is empty,
+   *  or it carries a character the header cannot encode. */
+  | 'malformed_credential'
   /** The base URL is plain `http` to a non-loopback host. A bearer credential
    *  must not travel over cleartext. */
   | 'insecure_base_url';

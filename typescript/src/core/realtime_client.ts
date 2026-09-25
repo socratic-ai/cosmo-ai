@@ -43,7 +43,7 @@ import {
   composeUsageUrl,
   composeVerifyUrl,
 } from '../transport/external_session_url';
-import { assertNotApiKeyInTokenSlot } from './credential_guard';
+import { assertNotApiKeyInTokenSlot, cleanCredential } from './credential_guard';
 import { resolveCredentialFromRuntime } from './credentials_file';
 import { getVerify, type CredentialInfo } from './verify';
 import { getUsage, type SessionUsage } from './usage';
@@ -147,8 +147,8 @@ export class RealtimeClient {
   }
 
   constructor(options: RealtimeClientOptions = {}) {
-    const { apiKey, token, transport, ...rest } = options;
-    if (apiKey !== undefined && token !== undefined) {
+    const { apiKey: rawApiKey, token: rawToken, transport, ...rest } = options;
+    if (rawApiKey !== undefined && rawToken !== undefined) {
       throw new CredentialsError({
         code: 'conflicting_credentials',
         message: 'Provide at most one of apiKey or token, not both.',
@@ -157,6 +157,12 @@ export class RealtimeClient {
     if (transport !== undefined && rest.transportFactory !== undefined) {
       throw new Error('Provide transport or transportFactory, not both.');
     }
+    // Clean before the guard below reads the value. A key pasted with a
+    // byte-order mark does not match the ``cosmo_`` prefix until it is
+    // cleaned, so guarding first would pass it and then clean it into a
+    // working bearer credential — the exact value that guard refuses.
+    const apiKey = rawApiKey === undefined ? undefined : cleanCredential(rawApiKey);
+    const token = typeof rawToken === 'string' ? cleanCredential(rawToken) : rawToken;
     if (typeof token === 'string') {
       assertNotApiKeyInTokenSlot(token);
     }
@@ -238,7 +244,10 @@ export class RealtimeClient {
     if (!this.#needsCredentialResolution) return;
     this.#credentialResolution ??= (async () => {
       const resolved = await resolveCredentialFromRuntime();
-      this.#credential = resolved.apiKey;
+      // Same cleaning as a key passed to the constructor: this one came out
+      // of an environment variable or the credentials file, which is where
+      // a stray newline or byte-order mark is most likely to be attached.
+      this.#credential = cleanCredential(resolved.apiKey);
       this.#canMint = true;
       if (resolved.baseUrl !== null) {
         assertSupportedBaseUrl(resolved.baseUrl);
