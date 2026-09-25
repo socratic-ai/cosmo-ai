@@ -206,6 +206,14 @@ class RealtimeClient:
                 code=CredentialsErrorCode.CONFLICTING_CREDENTIALS,
                 message="provide at most one of api_key or token",
             )
+        # Normalize before the guard below reads the value. A key pasted with
+        # a byte-order mark would otherwise slip past the ``cosmo_`` prefix
+        # check and then be cleaned into a working bearer credential, which is
+        # the exact mistake that check exists to refuse.
+        if isinstance(api_key, str):
+            api_key = _clean_credential(api_key)
+        if isinstance(token, str):
+            token = _clean_credential(token)
         if (
             isinstance(token, str)
             and token.startswith("cosmo_")
@@ -232,7 +240,7 @@ class RealtimeClient:
             self._token_source = None
             credential = api_key if api_key is not None else token
             assert credential is not None  # one branch above always sets one
-            self._credential = SecretStr(credential)
+            self._credential = SecretStr(_clean_credential(credential))
         base_url = (
             resolved_base_url
             or (os.environ.get(_BASE_URL_ENV_VAR) or "").strip()
@@ -1251,6 +1259,34 @@ class PreparedSession:
         with contextlib.suppress(BaseException):
             await self._inflight
         self._room = None
+
+
+def _clean_credential(raw: str) -> str:
+    """The credential as it can be sent, or a named error.
+
+    A key read from a file or an environment variable arrives with what the
+    tool that wrote it left behind: a trailing newline from a shell
+    redirect, a byte-order mark from PowerShell's UTF-8. Those are trimmed.
+    Anything still outside printable ASCII cannot go in an Authorization
+    header, and httpx raises from inside the request when it tries — a
+    UnicodeEncodeError or "Illegal header value", outside the error family
+    a caller catches. Refuse it here instead, as the other unusable
+    credentials are refused.
+    """
+    cleaned = raw.strip().strip("﻿").strip()
+    if not cleaned:
+        raise CredentialsError(
+            code=CredentialsErrorCode.MALFORMED_CREDENTIAL,
+            message="the credential is empty once whitespace is trimmed",
+        )
+    bad = next((c for c in cleaned if not (0x21 <= ord(c) <= 0x7E)), None)
+    if bad is not None:
+        raise CredentialsError(
+            code=CredentialsErrorCode.MALFORMED_CREDENTIAL,
+            message=f"the credential contains {bad!r}, which an Authorization "
+            "header cannot carry — check for a stray character in the value",
+        )
+    return cleaned
 
 
 _TRANSPORT_NAMES: tuple[str, ...] = ("webrtc", "websocket", "livekit")

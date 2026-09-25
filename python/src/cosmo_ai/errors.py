@@ -263,6 +263,11 @@ class CredentialsErrorCode(str, Enum):
     refused up front."""
     CONFLICTING_CREDENTIALS = "conflicting_credentials"
     """Both an API key and a token were supplied. Pass one."""
+    MALFORMED_CREDENTIAL = "malformed_credential"
+    """The credential carries characters an Authorization header cannot hold.
+    Surrounding whitespace and a byte-order mark are trimmed first, so this is
+    a credential that is wrong in its body, not one pasted with a stray
+    newline."""
     API_KEY_IN_TOKEN_SLOT = "api_key_in_token_slot"
     """A workspace API key was passed as an end-user token. The backend would
     honor it as a bearer, which is how a key ends up shipped to end users, so

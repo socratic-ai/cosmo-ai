@@ -165,10 +165,49 @@ def test_an_api_key_in_the_token_slot_is_refused() -> None:
     assert caught.value.code is CredentialsErrorCode.API_KEY_IN_TOKEN_SLOT
 
 
+def test_a_bom_prefixed_api_key_in_the_token_slot_is_still_refused() -> None:
+    """Trimming must not open the guard it sits next to. A key pasted with a
+    byte-order mark still starts with ``cosmo_`` once it is cleaned, so it has
+    to be refused as a key in the token slot rather than cleaned into a usable
+    bearer credential."""
+    with pytest.raises(CredentialsError, match="api_key") as caught:
+        RealtimeClient(token="\ufeff" + "cosmo_" + "a" * 64)
+    assert caught.value.code is CredentialsErrorCode.API_KEY_IN_TOKEN_SLOT
+
+    with pytest.raises(CredentialsError) as spaced:
+        RealtimeClient(token="  cosmo_" + "a" * 64 + "\n")
+    assert spaced.value.code is CredentialsErrorCode.API_KEY_IN_TOKEN_SLOT
+
+
 def test_both_credentials_at_once_is_refused() -> None:
     with pytest.raises(CredentialsError) as caught:
         RealtimeClient(api_key="cosmo_" + "a" * 64, token="cosmo_pat_" + "b" * 32)
     assert caught.value.code is CredentialsErrorCode.CONFLICTING_CREDENTIALS
+
+
+def test_a_credential_with_surrounding_whitespace_or_bom_is_usable() -> None:
+    """A key read from a file or an env var carries what wrote it: a trailing
+    newline from a shell redirect, a byte-order mark from PowerShell's UTF-8.
+    httpx raises from inside the request on either — UnicodeEncodeError for the
+    BOM, "Illegal header value" for the newline — so they are trimmed here."""
+    key = "cosmo_" + "a" * 64
+    for raw in (key + "\n", "\ufeff" + key, "  " + key + " ", key + "\r\n"):
+        client = RealtimeClient(api_key=raw)
+        assert client._credential is not None
+        assert client._credential.get_secret_value() == key
+
+
+def test_a_credential_that_cannot_go_in_a_header_is_refused() -> None:
+    """Trimming ends at the edges: a stray character inside the value is a
+    wrong credential, and is named as one instead of failing later inside the
+    HTTP client, outside the error family a caller catches."""
+    with pytest.raises(CredentialsError) as caught:
+        RealtimeClient(api_key="cosmo_aaa\nbbb")
+    assert caught.value.code is CredentialsErrorCode.MALFORMED_CREDENTIAL
+
+    with pytest.raises(CredentialsError) as empty:
+        RealtimeClient(api_key="   ")
+    assert empty.value.code is CredentialsErrorCode.MALFORMED_CREDENTIAL
 
 
 def test_minted_jwts_and_acts_as_user_tokens_pass_the_token_slot() -> None:
