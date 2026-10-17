@@ -1114,3 +1114,56 @@ def test_the_sync_close_leaves_the_native_source_closable() -> None:
         assert closed == [True], "the native source was orphaned by close()"
 
     asyncio.run(scenario())
+
+
+def test_capture_follows_a_mid_session_format_change(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A ``ws-audio-format`` mid-call has to move both halves of the session.
+
+    The playback resampler was rebuilt and the microphone was not, so the agent
+    followed the new rate while the caller's audio kept arriving at the old one.
+    Nothing raised; the server simply received mis-rated PCM.
+    """
+
+    async def scenario() -> None:
+        socket = FakeSocket([AUDIO_FORMAT])
+        recorder = Recorder()
+        transport = await connected(socket, recorder, monkeypatch)
+        await settle()
+
+        source = PcmAudioSource(48000, 1)
+        await transport.publish_audio_source(source)
+
+        # 240 ms at 48 kHz, in 20 ms frames, at the preamble's 16 kHz.
+        for _ in range(12):
+            await source.capture_frame(Frame(b"\x00\x08" * 960, 48000))
+        await settle()
+        before = len(b"".join(socket.binary_frames()))
+
+        socket.push(
+            json.dumps(
+                {
+                    "type": "ws-audio-format",
+                    "input_sample_rate_hz": 8000,
+                    "output_sample_rate_hz": 12000,
+                    "num_channels": 1,
+                }
+            )
+        )
+        await settle()
+        assert transport._output_rate == 12000  # playback moved, as it already did
+
+        socket.sent.clear()
+        for _ in range(12):
+            await source.capture_frame(Frame(b"\x00\x08" * 960, 48000))
+        await settle()
+        after = len(b"".join(socket.binary_frames()))
+
+        # The same 240 ms at half the rate is half the bytes.
+        assert after == pytest.approx(before // 2, abs=200), (
+            f"capture still at the old rate: {after} bytes where {before // 2} was expected"
+        )
+        await transport.disconnect()
+
+    asyncio.run(scenario())

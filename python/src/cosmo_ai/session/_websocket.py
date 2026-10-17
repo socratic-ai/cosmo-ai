@@ -334,25 +334,75 @@ class WebSocketTransport:
         self, queue: "asyncio.Queue[bytes]", *, source_rate: int, input_rate: int
     ) -> None:
         """Drain captured PCM onto the socket at the provider's rate,
-        echo-cancelled when a microphone publish engaged the canceller."""
-        resample = Resampler(source_rate=source_rate, target_rate=input_rate)
-        chunk_bytes = (input_rate * _SEND_CHUNK_MS // 1000) * _INT16_BYTES
+        echo-cancelled when a microphone publish engaged the canceller.
+
+        The rate is re-read each time round rather than bound once, because
+        ``ws-audio-format`` can arrive mid-session and ``_adopt_audio_format``
+        rebuilds the playback resampler when it does. Binding it here left the
+        two halves of the call on different rates: the agent's audio followed
+        the new format while the microphone kept sending at the old one, with
+        nothing raised. The TypeScript transport already reads its rate per
+        chunk; this matches it.
+        """
+        rate = input_rate
+        resample = Resampler(source_rate=source_rate, target_rate=rate)
+        chunk_bytes = (rate * _SEND_CHUNK_MS // 1000) * _INT16_BYTES
         pending = bytearray()
         while True:
-            data = resample(await queue.get())
+            data = await queue.get()
+
+            current = self._input_rate or rate
+            if current != rate:
+                # Finish the old rate's audio before switching, or the tail
+                # arrives mis-chunked at the new one.
+                if pending:
+                    await self._flush(pending, chunk_bytes)
+                logger.debug(
+                    "realtime.ws_capture_rate_changed", was=rate, now=current
+                )
+                rate = current
+                resample = Resampler(source_rate=source_rate, target_rate=rate)
+                chunk_bytes = (rate * _SEND_CHUNK_MS // 1000) * _INT16_BYTES
+                self._rebuild_echo(rate)
+
+            data = resample(data)
             if self._echo is not None:
                 try:
                     data = self._echo.process_capture(data)
                 except Exception:
                     self._disengage_echo("capture")
             pending.extend(data)
-            while len(pending) >= chunk_bytes:
-                frame = bytes(pending[:chunk_bytes])
-                del pending[:chunk_bytes]
-                socket = self._socket
-                if socket is None or self._closing:
-                    return
-                await socket.send(frame)
+            if not await self._flush(pending, chunk_bytes):
+                return
+
+    async def _flush(self, pending: bytearray, chunk_bytes: int) -> bool:
+        """Send whole chunks out of ``pending``. False once the socket is gone."""
+        while len(pending) >= chunk_bytes:
+            frame = bytes(pending[:chunk_bytes])
+            del pending[:chunk_bytes]
+            socket = self._socket
+            if socket is None or self._closing:
+                return False
+            await socket.send(frame)
+        return True
+
+    def _rebuild_echo(self, capture_rate: int) -> None:
+        """Re-make the canceller at a new capture rate, if one is engaged.
+
+        It was built with the rate in force at publish time, so a format change
+        leaves it cancelling against the wrong geometry.
+        """
+        if self._echo is None:
+            return
+        try:
+            self._echo = EchoCanceller(
+                capture_rate=capture_rate, playback_rate=AGENT_AUDIO_SAMPLE_RATE
+            )
+        except ValueError:
+            self._echo = None
+            logger.warning(
+                "realtime.echo_cancellation_unavailable", input_sample_rate=capture_rate
+            )
 
     def set_agent_audio_sink(self, sink: "AgentAudioSink | None") -> None:
         self._audio_sink = sink
